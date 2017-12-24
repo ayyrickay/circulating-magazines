@@ -1,0 +1,42 @@
+/*.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}*/
+
+body {
+  background-color: #F1F3F3
+}
+.axis {
+	font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #D4D8DA;
+  stroke-width: 2px;
+  shape-rendering: crispEdges;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+.focus circle {
+  fill: #F1F3F3;
+  stroke: steelblue;
+  stroke-width: 1px;
+}
+
+.hover-line {
+  stroke: steelblue;
+  stroke-width: 1px;
+}
