@@ -5,8 +5,40 @@
 }*/
 
 body {
+  overflow: hidden;
   background-color: #F1F3F3
 }
+
+.container {
+  width:100vw;
+  height: 100vh;
+  display: grid;
+  overflow-x: hidden;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  grid-gap: 1em;
+}
+
+.header {
+  grid-column: 1/13;
+  margin: 1em 0;
+}
+
+#us1-chart {
+  grid-column: 1/7;
+  grid-row: 2/6;
+}
+
+#us2-chart {
+  grid-column: 7/13;
+  grid-row: 2/6;
+}
+
+#line-chart {
+  grid-column: 1/13;
+  grid-row: 6/10;
+}
+
 .axis {
 	font: 10px sans-serif;
 }
@@ -21,8 +53,6 @@ body {
 
 .line {
   fill: none;
-  stroke: steelblue;
-  stroke-width: 2px;
 }
 
 .overlay {
@@ -32,7 +62,6 @@ body {
 
 .focus circle {
   fill: #F1F3F3;
-  stroke: steelblue;
   stroke-width: 1px;
 }
 
