@@ -2,7 +2,7 @@ const numberFormat = d3.format(".2f")
 const sources = ["./assets/data/geodata.json", "./assets/data/circulation.json"];
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
 const us2Chart = dc.geoChoroplethChart("#us2-chart")
-const lineChart=dc.compositeChart("#line-chart")
+const composite=dc.compositeChart("#line-chart")
 const stateCodes = {
   'Alabama': 'AL',
   'Alaska': 'AK',
@@ -65,16 +65,22 @@ const stateCodes = {
   'Wyoming': 'WY'
 }
 
+const colorScales = {
+  red: ['#FFEBEE', '#FFCDD2', '#EF9A9A', '#E57373', '#EF5350', '#F44336', '#E53935', '#D32F2F', '#C62828', '#B71C1C'],
+  blue: ['#E3F2FD', '#BBDEFB', '#90CAF9', '#64B5F6', '#42A5F5', '#2196F3', '#1E88E5', '#1976D2', '#1565C0', '#0D47A1'],
+  teal: ['#B2DFDB', '#4DB6AC', '#009688', '#00796B', '#004D40'],
+  purple: ['#E1BEE7', '#BA68C8', '#9C27B0', '#7B1FA2', '#4A148C']
+}
+
 const repairGeoKey = (sourceGroup) => {
+  console.log(sourceGroup.all().length)
     return {
         all: () => {
             return sourceGroup.all().map((d) => {
-              console.log()
               const dimensions = d.key.split(',')
               d.key = dimensions[0]
-              if(dimensions[0] === 'Maine') console.log(d)
               return d
-            });
+            })
         }
     }
 }
@@ -82,16 +88,18 @@ const repairGeoKey = (sourceGroup) => {
 const filterCirculationByMagazine = (sourceGroup, magazine) => {
     return {
         all: () => {
-          console.log('sourcegroup', sourceGroup.all())
+          // console.log('sourcegroup', sourceGroup.all())
             return sourceGroup.all().filter((d) => {
-              // console.log('BEFORE', d)
               const dimensions = d.key ? d.key.split(',') : [null, null]
               d.key = dimensions[1]
-              // console.log('AFTER', d)
               return dimensions[0] === magazine
-            });
+            })
         }
     }
+}
+
+const getTopValue = (group) => {
+  return group.top(60)[59].value
 }
 
 // const industryChart = dc.bubbleChart("#industry-chart")
@@ -105,17 +113,20 @@ const filterCirculationByMagazine = (sourceGroup, magazine) => {
 //     const chart1Key = geodata.dimension((d) => `${d["Title"]},${d["State/Region"]}`)
 //     const chart2Key = geodata.dimension((d) => `${d["Title"]},${d["State/Region"]}`)
 
-d3.json("./assets/data/joined_data.json").then((data) => {
+d3.json("./assets/data/joined_data.json").then((unparsedData) => {
+
+  const data = unparsedData.map(d => {
+  	d.actual_issue_date = new Date(d.actual_issue_date)
+    return d
+  })
 
   const title1Data = data.filter((d) => {
-    return d.magazine_title === 'New Yorker'
-  })
+                        return d.magazine_title === 'New Yorker'
+                      })
 
   const title2Data = data.filter((d) => {
-    return d.magazine_title === 'Saturday Evening Post'
-  })
-
-  const crossfilter = crossfilter(data)
+                        return d.magazine_title === 'Saturday Evening Post'
+                      })
 
   const title1Circulation = crossfilter(title1Data)
   const title1States = title1Circulation.dimension(d => d.state_region)
@@ -126,13 +137,16 @@ d3.json("./assets/data/joined_data.json").then((data) => {
   const title2States = title2Circulation.dimension(d => d.state_region)
   const chart2Key = title2Circulation.dimension((d) => `${d.state_region}, ${d.sampled_issue_date}`)
   const chart2Group = chart2Key.group().reduceSum(d => d.sampled_total_sales)
+
+  console.log(getTopValue(chart1Group), getTopValue(chart2Group))
+  console.log(repairGeoKey(chart1Group).all().length)
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         console.log("loading state json")
         us1Chart.dimension(title1States)
                 .group(repairGeoKey(chart1Group))
-                .colors(d3.scaleQuantize().range(["#E2F2FF", "#C4E4FF", "#9ED2FF", "#81C5FF", "#6BBAFF", "#51AEFF", "#36A2FF", "#1E96FF", "#0089FF", "#0061B5"]))
-                .colorDomain([-1, 100000])
-                .colorCalculator(function (d) { return d ? us1Chart.colors()(d) : '#ccc' })
+                .colors(d3.scaleQuantize().range(colorScales.blue))
+                .colorDomain([0, getTopValue(chart1Group)])
+                .colorAccessor(d => d ? d : 0)
                 .overlayGeoJson(statesJson.features, "state", function (d) {
                     return d.properties.name
                 })
@@ -150,9 +164,9 @@ d3.json("./assets/data/joined_data.json").then((data) => {
 
         us2Chart.dimension(title2States)
                 .group(repairGeoKey(chart2Group))
-                .colors(d3.scaleQuantize().range(["#E2F2FF", "#C4E4FF", "#9ED2FF", "#81C5FF", "#6BBAFF", "#51AEFF", "#36A2FF", "#1E96FF", "#0089FF", "#0061B5"]))
-                .colorDomain([0, 1000000])
-                .colorCalculator(function (d) { return d ? us2Chart.colors()(d) : '#ccc' })
+                .colors(d3.scaleQuantize().range(colorScales.red))
+                .colorDomain([0, getTopValue(chart2Group)])
+                .colorAccessor(d => d ? d : 0)
                 .overlayGeoJson(statesJson.features, "state", function (d) {
                     return d.properties.name
                 })
@@ -168,32 +182,40 @@ d3.json("./assets/data/joined_data.json").then((data) => {
                     return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
                 })
 
-        const lineChartDate = title1Circulation.dimension(d => d.actual_issue_date)
+
+        const dimension1 = title1Circulation.dimension(dc.pluck('actual_issue_date'))
         const lineChartYear1 = title1Circulation.dimension(d => d.actual_issue_date)
         const lineChartYear2 = title2Circulation.dimension(d => d.actual_issue_date)
 
-        const circulationGroup1 = lineChartYear1.group().reduceSum(d => d.circulation)
-        const circulationGroup2 = lineChartYear2.group().reduceSum(d => d.circulation)
+        const circulationGroup1 = lineChartYear1.group().reduceSum(d => d.issue_circulation)
+        const circulationGroup2 = lineChartYear2.group().reduceSum(d => d.issue_circulation)
 
-        lineChart.width(1160)
-            .height(250)
-            .margins({ top: 10, right: 10, bottom: 20, left: 40 })
-            .dimension(lineChartDate)
-            .transitionDuration(500)
-            .elasticY(true)
-            .brushOn(false)
-            .valueAccessor(function (d) {
-                return d.value;
-            })
-            .title(function (d) {
-                return "\nCirculation: " + d.key;
-
-            })
-            .x(d3.scaleTime().domain([1925, 2001]))
-            .compose([
-                dc.lineChart(lineChart).group(circulationGroup1),
-                dc.lineChart(lineChart).group(circulationGroup2)
-            ])
+        composite
+          .width(1100)
+          .height(250)
+          .xUnits(d3.timeMonths)
+          .margins({ top: 10, right: 10, bottom: 20, left: 80 })
+          .elasticY(true)
+          .brushOn(false)
+          .valueAccessor(function (d) {
+              return d.value;
+          })
+          .title(function (d) {
+              return `${d.key.format('mmm dd, yyyy')}\nCirculation: ${d.value} `
+          })
+          .x(d3.scaleTime().domain([new Date(1925, 0, 1), new Date(1927, 0, 1)]))
+          .renderHorizontalGridLines(true)
+          .compose([
+            dc.lineChart(composite)
+              .dimension(dimension1)
+              .colors('blue')
+              .group(circulationGroup1, 'New Yorker'),
+            dc.lineChart(composite)
+              .dimension(dimension1)
+              .colors('red')
+              .group(circulationGroup2, 'Saturday Evening Post')
+          ])
+          .render()
 
         dc.renderAll()
     })

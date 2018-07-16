@@ -5,6 +5,7 @@
 }*/
 
 body {
+  overflow: hidden;
   background-color: #F1F3F3
 }
 
@@ -20,7 +21,7 @@ body {
 
 .header {
   grid-column: 1/13;
-  margin: 2em 0;
+  margin: 1em 0;
 }
 
 #us1-chart {
@@ -52,8 +53,6 @@ body {
 
 .line {
   fill: none;
-  stroke: steelblue;
-  stroke-width: 2px;
 }
 
 .overlay {
@@ -63,7 +62,6 @@ body {
 
 .focus circle {
   fill: #F1F3F3;
-  stroke: steelblue;
   stroke-width: 1px;
 }
 
