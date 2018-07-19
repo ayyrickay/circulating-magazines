@@ -2,7 +2,14 @@ const numberFormat = d3.format(".2f")
 const sources = ["./assets/data/geodata.json", "./assets/data/circulation.json"];
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
 const us2Chart = dc.geoChoroplethChart("#us2-chart")
-const composite=dc.compositeChart("#line-chart")
+const composite = dc.compositeChart("#line-chart")
+const us2Width = document.getElementById('us2-chart').offsetWidth
+const us2Height = document.getElementById('us2-chart').offsetHeight
+const compositeWidth = document.getElementById('line-chart').offsetWidth
+const compositeHeight = document.getElementById('line-chart').offsetHeight
+
+console.log('height', document.getElementById('line-chart').offsetHeight)
+
 const stateCodes = {
   'Alabama': 'AL',
   'Alaska': 'AK',
@@ -85,6 +92,14 @@ const repairGeoKey = (sourceGroup) => {
     }
 }
 
+window.onresize = (event) => {
+  const newCompositeWidth = document.getElementById('line-chart').offsetWidth - 75
+  const newCompositeHeight = document.getElementById('line-chart').offsetHeight - 50
+  composite.width(newCompositeWidth).height(newCompositeHeight).transitionDuration(0)
+  dc.renderAll()
+  composite.transitionDuration(750)
+}
+
 const filterCirculationByMagazine = (sourceGroup, magazine) => {
     return {
         all: () => {
@@ -142,7 +157,9 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
   console.log(repairGeoKey(chart1Group).all().length)
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         console.log("loading state json")
-        us1Chart.dimension(title1States)
+        us1Chart.width(us2Width)
+                .height(us2Height)
+                .dimension(title1States)
                 .group(repairGeoKey(chart1Group))
                 .colors(d3.scaleQuantize().range(colorScales.blue))
                 .colorDomain([0, getTopValue(chart1Group)])
@@ -151,18 +168,20 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                     return d.properties.name
                 })
                 .projection(d3.geoAlbersUsa()
-                  .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 2.1))
-                  .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2])
+                  .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
+                  .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
                 )
                 .valueAccessor(function(kv) {
-                    console.log('Running value accessor', kv)
+                    // console.log('Running value accessor', kv)
                     return kv.value
                 })
                 .title(function (d) {
                     return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
                 })
 
-        us2Chart.dimension(title2States)
+        us2Chart.width(us2Width)
+                .height(us2Height)
+                .dimension(title2States)
                 .group(repairGeoKey(chart2Group))
                 .colors(d3.scaleQuantize().range(colorScales.red))
                 .colorDomain([0, getTopValue(chart2Group)])
@@ -171,8 +190,8 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                     return d.properties.name
                 })
                 .projection(d3.geoAlbersUsa()
-                  .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 2.1))
-                  .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2])
+                  .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
+                  .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
                 )
                 .valueAccessor(function(kv) {
                     // console.log(kv)
@@ -191,12 +210,12 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
         const circulationGroup2 = lineChartYear2.group().reduceSum(d => d.issue_circulation)
 
         composite
-          .width(1100)
-          .height(250)
+          .width(compositeWidth-50)
+          .height(compositeHeight-50)
           .xUnits(d3.timeMonths)
           .margins({ top: 10, right: 10, bottom: 20, left: 80 })
           .elasticY(true)
-          .brushOn(true)
+          .brushOn(false)
           .valueAccessor(function (d) {
               return d.value;
           })
