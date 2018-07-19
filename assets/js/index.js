@@ -155,7 +155,7 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                   .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2])
                 )
                 .valueAccessor(function(kv) {
-                    // console.log(kv)
+                    console.log('Running value accessor', kv)
                     return kv.value
                 })
                 .title(function (d) {
@@ -196,7 +196,7 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
           .xUnits(d3.timeMonths)
           .margins({ top: 10, right: 10, bottom: 20, left: 80 })
           .elasticY(true)
-          .brushOn(false)
+          .brushOn(true)
           .valueAccessor(function (d) {
               return d.value;
           })
@@ -208,11 +208,11 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
           .compose([
             dc.lineChart(composite)
               .dimension(dimension1)
-              .colors('blue')
+              .colors(colorScales.blue[colorScales.blue.length - 1])
               .group(circulationGroup1, 'New Yorker'),
             dc.lineChart(composite)
               .dimension(dimension1)
-              .colors('red')
+              .colors(colorScales.red[colorScales.red.length - 1])
               .group(circulationGroup2, 'Saturday Evening Post')
           ])
           .render()
