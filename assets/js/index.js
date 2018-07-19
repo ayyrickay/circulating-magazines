@@ -96,7 +96,19 @@ window.onresize = (event) => {
   const newCompositeWidth = document.getElementById('line-chart').offsetWidth - 75
   const newCompositeHeight = document.getElementById('line-chart').offsetHeight - 50
   composite.width(newCompositeWidth).height(newCompositeHeight).transitionDuration(0)
+  us1Chart.projection(d3.geoAlbersUsa()
+    .scale(Math.min(document.getElementById('us1-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
+    .translate([document.getElementById('us1-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
+  )
+  .transitionDuration(0)
+  us2Chart.projection(d3.geoAlbersUsa()
+    .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
+    .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
+  ).transitionDuration(0)
+
   dc.renderAll()
+  us1Chart.transitionDuration(750)
+  us2Chart.transitionDuration(750)
   composite.transitionDuration(750)
 }
 
