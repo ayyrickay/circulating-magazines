@@ -145,6 +145,16 @@ const filterCirculationByMagazine = (sourceGroup, magazine) => {
     }
 }
 
+const filterCirculationData = (sourceGroup) => {
+    return {
+        all:function () {
+            return sourceGroup.all().filter(function(d) {
+                return d
+            })
+        }
+    }
+}
+
 const getTopValue = (group) => {
   return group.top(60)[59].value
 }
@@ -180,17 +190,21 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
   const title1States = title1Circulation.dimension(d => d.state_region)
   const chart1Key = title1Circulation.dimension((d) => `${d.state_region},${d.sampled_issue_date}`)
   const chart1Group = chart1Key.group().reduceSum(d => d.sampled_total_sales)
+  const chart1Total = chart1Group.all().reduce((a, b) => ({value: a.value + b.value}))
+  const dimension1 = title1Circulation.dimension(d => d.actual_issue_date)
+  const genericCirculationGroup = dimension1.group().all()
+  const circulationGroup1 = dimension1.group().reduceSum(d => d.issue_circulation)
+  let circulationValuesMap = {}
 
-  const chart1Total = chart1Group.all().reduce((a, b) => {
-    return {value: a.value + b.value}
-  })
+  const generateValuesMap = () => {
+    console.log('running values map')
+    for(let i = 0; i < genericCirculationGroup.length; i++) {
+        circulationValuesMap[genericCirculationGroup[i].key] = genericCirculationGroup[i].value
+    }
+    console.log(circulationValuesMap)
+  }
 
-  console.log(`Chart1Total is ${JSON.stringify(chart1Total)}`)
-
-  const title2Circulation = crossfilter(title2Data)
-  const title2States = title2Circulation.dimension(d => d.state_region)
-  const chart2Key = title2Circulation.dimension((d) => `${d.state_region}, ${d.sampled_issue_date}`)
-  const chart2Group = chart2Key.group().reduceSum(d => d.sampled_total_sales)
+  generateValuesMap()
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.updateColorScale = () => us1Chart.colorDomain(generateScale(chart1Group))
@@ -217,36 +231,10 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                 .title(function (d) {
                     return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
                 })
-
-        // us2Chart.width(us2Width)
-        //         .height(us2Height)
-        //         .dimension(title2States)
-        //         .group(repairGeoKey(chart2Group))
-        //         .colors(d3.scaleQuantize().range(colorScales.red))
-        //         .colorDomain([0, getTopValue(chart2Group)])
-        //         .colorAccessor(d => d ? d : 0)
-        //         .overlayGeoJson(statesJson.features, "state", function (d) {
-        //             return d.properties.name
-        //         })
-        //         .projection(d3.geoAlbersUsa()
-        //           .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
-        //           .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
-        //         )
-        //         .valueAccessor(function(kv) {
-        //             // console.log(kv)
-        //             return kv.value
-        //         })
-        //         .title(function (d) {
-        //             return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
-        //         })
-
-
-        const dimension1 = title1Circulation.dimension(dc.pluck('actual_issue_date'))
-        const lineChartYear1 = title1Circulation.dimension(d => d.actual_issue_date)
-        const lineChartYear2 = title2Circulation.dimension(d => d.actual_issue_date)
-
-        const circulationGroup1 = lineChartYear1.group().reduceSum(d => d.issue_circulation)
-        const circulationGroup2 = lineChartYear2.group().reduceSum(d => d.issue_circulation)
+                .on('filtered', () => {
+                  console.log(circulationGroup1.all()[0])
+                  generateValuesMap()
+                })
 
         lineChart1
           .width(lineChart1Width-50)
@@ -254,15 +242,15 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
           .xUnits(d3.timeMonths)
           .margins({ top: 10, right: 10, bottom: 20, left: 80 })
           .dimension(dimension1)
-          .group(circulationGroup1, 'New Yorker')
+          .group(circulationGroup1)
           .colors(colorScales.blue[colorScales.blue.length - 1])
           .elasticY(true)
           .brushOn(false)
           .valueAccessor(function (d) {
-              return d.value;
+              return d.value / circulationValuesMap[d.key]
           })
           .title(function (d) {
-              return `${d.key.format('mmm dd, yyyy')}\nCirculation: ${d.value} `
+              return `${d.key.format('mmm dd, yyyy')}\nCirculation: ${d.value / circulationValuesMap[d.key]} `
           })
           .x(d3.scaleTime().domain([new Date(1925, 0, 1), new Date(1927, 0, 1)]))
           .render()
