@@ -16,30 +16,58 @@
 
     <h2 class="header">Magazine Circulation</h2>
 
-    <div id="us1-chart">
-        <strong>New Yorker Circulation By State (color: total sold)</strong>
-        <a class="reset" href="javascript:us1Chart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
-        <p class="reset" style="display: hidden;"> | Current filter: <span class="filter"></span></p>
+    <div class="chart-group-1">
+      <h3 id="magazine-title-1"></h3>
+      <form>
+        <input
+          type="radio"
+          id="renderOption1"
+          name="chart-group-1"
+          value="rawData"
+          onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.updateColorScale();dc.redrawAll();"
+          checked>
+        <label for="renderOption1">Raw Data</label>
 
-        <div class="clearfix"></div>
+        <input type="radio" id="renderOption2"
+         name="chart-group-1" value="percentOfPopulation"
+         onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.updateColorScale();dc.redrawAll();"
+         >
+        <label for="renderOption2">% of Population</label>
+
+        <input type="radio" id="renderOption3"
+         name="chart-group-1" value="percentOfTotal"
+         onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.updateColorScale();dc.redrawAll();"
+         >
+        <label for="renderOption3">% of Total</label>
+      </form>
+      <div class="charts">
+        <div id="us1-chart">
+            <strong>Circulation By State (color: total sold)</strong>
+            <a class="reset" href="javascript:us1Chart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+            <div class="clearfix"></div>
+        </div>
+
+        <div id="line-chart-1">
+            <strong>By Circulation</strong>
+            <a class="reset" href="javascript:line1.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+
+            <div class="clearfix"></div>
+        </div>
+      </div>
+      <p class="reset" style="display: hidden;"> | Current filter: <span class="filter"></span></p>
     </div>
 
-    <div id="us2-chart">
+    <!-- <div id="us2-chart">
         <strong>Saturday Evening Post Circulation By State (color: total sold)</strong>
         <a class="reset" href="javascript:us2Chart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
         <p class="reset" style="display: hidden;"> | Current filter: <span class="filter"></span></p>
 
         <div class="clearfix"></div>
-    </div>
+    </div> -->
 
     <div class="clearfix"></div>
 
-    <div id="line-chart">
-        <strong>By Circulation</strong>
-        <a class="reset" href="javascript:composite.filterAll();dc.redrawAll();" style="display: none;">reset</a>
 
-        <div class="clearfix"></div>
-    </div>
 
   </div>
 

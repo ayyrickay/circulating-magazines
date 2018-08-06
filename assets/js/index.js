@@ -1,14 +1,14 @@
 const numberFormat = d3.format(".2f")
 const sources = ["./assets/data/geodata.json", "./assets/data/circulation.json"];
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
-const us2Chart = dc.geoChoroplethChart("#us2-chart")
-const composite = dc.compositeChart("#line-chart")
-const us2Width = document.getElementById('us2-chart').offsetWidth
-const us2Height = document.getElementById('us2-chart').offsetHeight
-const compositeWidth = document.getElementById('line-chart').offsetWidth
-const compositeHeight = document.getElementById('line-chart').offsetHeight
+let us1ChartRenderOption = 'rawData'
+// const us2Chart = dc.geoChoroplethChart("#us2-chart")
+const lineChart1 = dc.lineChart("#line-chart-1")
+const us1Width = document.getElementById('us1-chart').offsetWidth
+const us1Height = document.getElementById('us1-chart').offsetHeight
+const lineChart1Width = document.getElementById('line-chart-1').offsetWidth
+const lineChart1Height = document.getElementById('line-chart-1').offsetHeight
 
-console.log('height', document.getElementById('line-chart').offsetHeight)
 
 const stateCodes = {
   'Alabama': 'AL',
@@ -79,6 +79,26 @@ const colorScales = {
   purple: ['#E1BEE7', '#BA68C8', '#9C27B0', '#7B1FA2', '#4A148C']
 }
 
+const transformValue = (data, statePopulation, total) => {
+  if (us1ChartRenderOption === 'percentOfPopulation') {
+    return data / statePopulation
+  } else if (us1ChartRenderOption === 'percentOfTotal') {
+    return data / total * 100
+  } else {
+    return data
+  }
+}
+
+const generateScale = (chartGroup) =>  {
+  console.log('generating new scale based on', us1ChartRenderOption)
+  if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
+    return [0, 1]
+  } else {
+    return [0, getTopValue(chartGroup)]
+  }
+}
+
+// Replace this method; it doesn't so much repair the geokey as it generates a new group
 const repairGeoKey = (sourceGroup) => {
   console.log(sourceGroup.all().length)
     return {
@@ -93,23 +113,23 @@ const repairGeoKey = (sourceGroup) => {
 }
 
 window.onresize = (event) => {
-  const newCompositeWidth = document.getElementById('line-chart').offsetWidth - 75
-  const newCompositeHeight = document.getElementById('line-chart').offsetHeight - 50
-  composite.width(newCompositeWidth).height(newCompositeHeight).transitionDuration(0)
+  const newlineChart1Width = document.getElementById('line-chart').offsetWidth - 75
+  const newlineChart1Height = document.getElementById('line-chart').offsetHeight - 50
+  lineChart1.width(newlineChart1Width).height(newlineChart1Height).transitionDuration(0)
   us1Chart.projection(d3.geoAlbersUsa()
-    .scale(Math.min(document.getElementById('us1-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
-    .translate([document.getElementById('us1-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
+    .scale(Math.min(document.getElementById('us1-chart').offsetWidth * 1.2, document.getElementById('us1-chart').offsetHeight * 1.5))
+    .translate([document.getElementById('us1-chart').offsetWidth / 2, document.getElementById('us1-chart').offsetHeight / 2.5])
   )
   .transitionDuration(0)
-  us2Chart.projection(d3.geoAlbersUsa()
-    .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
-    .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
-  ).transitionDuration(0)
+  // us2Chart.projection(d3.geoAlbersUsa()
+  //   .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
+  //   .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
+  // ).transitionDuration(0)
 
   dc.renderAll()
   us1Chart.transitionDuration(750)
-  us2Chart.transitionDuration(750)
-  composite.transitionDuration(750)
+  // us2Chart.transitionDuration(750)
+  lineChart1.transitionDuration(750)
 }
 
 const filterCirculationByMagazine = (sourceGroup, magazine) => {
@@ -155,63 +175,70 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                         return d.magazine_title === 'Saturday Evening Post'
                       })
 
+  document.getElementById('magazine-title-1').innerHTML = title1Data[0].magazine_title
   const title1Circulation = crossfilter(title1Data)
   const title1States = title1Circulation.dimension(d => d.state_region)
   const chart1Key = title1Circulation.dimension((d) => `${d.state_region},${d.sampled_issue_date}`)
   const chart1Group = chart1Key.group().reduceSum(d => d.sampled_total_sales)
+
+  const chart1Total = chart1Group.all().reduce((a, b) => {
+    return {value: a.value + b.value}
+  })
+
+  console.log(`Chart1Total is ${JSON.stringify(chart1Total)}`)
 
   const title2Circulation = crossfilter(title2Data)
   const title2States = title2Circulation.dimension(d => d.state_region)
   const chart2Key = title2Circulation.dimension((d) => `${d.state_region}, ${d.sampled_issue_date}`)
   const chart2Group = chart2Key.group().reduceSum(d => d.sampled_total_sales)
 
-  console.log(getTopValue(chart1Group), getTopValue(chart2Group))
-  console.log(repairGeoKey(chart1Group).all().length)
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
-        console.log("loading state json")
-        us1Chart.width(us2Width)
-                .height(us2Height)
+        us1Chart.updateColorScale = () => us1Chart.colorDomain(generateScale(chart1Group))
+        us1Chart.width(us1Width)
+                .height(us1Height)
                 .dimension(title1States)
                 .group(repairGeoKey(chart1Group))
                 .colors(d3.scaleQuantize().range(colorScales.blue))
-                .colorDomain([0, getTopValue(chart1Group)])
-                .colorAccessor(d => d ? d : 0)
+                .colorDomain(generateScale(chart1Group))
+                .colorAccessor(d => {
+                  return d ? d : 0
+                })
                 .overlayGeoJson(statesJson.features, "state", function (d) {
                     return d.properties.name
                 })
                 .projection(d3.geoAlbersUsa()
-                  .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
-                  .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
+                  .scale(Math.min(document.getElementById('us1-chart').offsetWidth * 1.2, document.getElementById('us1-chart').offsetHeight * 1.5))
+                  .translate([document.getElementById('us1-chart').offsetWidth / 2, document.getElementById('us1-chart').offsetHeight / 2.5])
                 )
                 .valueAccessor(function(kv) {
                     // console.log('Running value accessor', kv)
-                    return kv.value
+                    return transformValue(kv.value, 1000, chart1Total.value) // TODO: replace 1000 with some semblance of state population data
                 })
                 .title(function (d) {
                     return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
                 })
 
-        us2Chart.width(us2Width)
-                .height(us2Height)
-                .dimension(title2States)
-                .group(repairGeoKey(chart2Group))
-                .colors(d3.scaleQuantize().range(colorScales.red))
-                .colorDomain([0, getTopValue(chart2Group)])
-                .colorAccessor(d => d ? d : 0)
-                .overlayGeoJson(statesJson.features, "state", function (d) {
-                    return d.properties.name
-                })
-                .projection(d3.geoAlbersUsa()
-                  .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
-                  .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
-                )
-                .valueAccessor(function(kv) {
-                    // console.log(kv)
-                    return kv.value
-                })
-                .title(function (d) {
-                    return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
-                })
+        // us2Chart.width(us2Width)
+        //         .height(us2Height)
+        //         .dimension(title2States)
+        //         .group(repairGeoKey(chart2Group))
+        //         .colors(d3.scaleQuantize().range(colorScales.red))
+        //         .colorDomain([0, getTopValue(chart2Group)])
+        //         .colorAccessor(d => d ? d : 0)
+        //         .overlayGeoJson(statesJson.features, "state", function (d) {
+        //             return d.properties.name
+        //         })
+        //         .projection(d3.geoAlbersUsa()
+        //           .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
+        //           .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
+        //         )
+        //         .valueAccessor(function(kv) {
+        //             // console.log(kv)
+        //             return kv.value
+        //         })
+        //         .title(function (d) {
+        //             return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
+        //         })
 
 
         const dimension1 = title1Circulation.dimension(dc.pluck('actual_issue_date'))
@@ -221,11 +248,14 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
         const circulationGroup1 = lineChartYear1.group().reduceSum(d => d.issue_circulation)
         const circulationGroup2 = lineChartYear2.group().reduceSum(d => d.issue_circulation)
 
-        composite
-          .width(compositeWidth-50)
-          .height(compositeHeight-50)
+        lineChart1
+          .width(lineChart1Width-50)
+          .height(lineChart1Height-50)
           .xUnits(d3.timeMonths)
           .margins({ top: 10, right: 10, bottom: 20, left: 80 })
+          .dimension(dimension1)
+          .group(circulationGroup1, 'New Yorker')
+          .colors(colorScales.blue[colorScales.blue.length - 1])
           .elasticY(true)
           .brushOn(false)
           .valueAccessor(function (d) {
@@ -235,17 +265,6 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
               return `${d.key.format('mmm dd, yyyy')}\nCirculation: ${d.value} `
           })
           .x(d3.scaleTime().domain([new Date(1925, 0, 1), new Date(1927, 0, 1)]))
-          .renderHorizontalGridLines(true)
-          .compose([
-            dc.lineChart(composite)
-              .dimension(dimension1)
-              .colors(colorScales.blue[colorScales.blue.length - 1])
-              .group(circulationGroup1, 'New Yorker'),
-            dc.lineChart(composite)
-              .dimension(dimension1)
-              .colors(colorScales.red[colorScales.red.length - 1])
-              .group(circulationGroup2, 'Saturday Evening Post')
-          ])
           .render()
 
         dc.renderAll()
