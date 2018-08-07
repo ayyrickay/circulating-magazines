@@ -113,8 +113,8 @@ const repairGeoKey = (sourceGroup) => {
 }
 
 window.onresize = (event) => {
-  const newlineChart1Width = document.getElementById('line-chart').offsetWidth - 75
-  const newlineChart1Height = document.getElementById('line-chart').offsetHeight - 50
+  const newlineChart1Width = document.getElementById('line-chart-1').offsetWidth - 75
+  const newlineChart1Height = document.getElementById('line-chart-1').offsetHeight - 50
   lineChart1.width(newlineChart1Width).height(newlineChart1Height).transitionDuration(0)
   us1Chart.projection(d3.geoAlbersUsa()
     .scale(Math.min(document.getElementById('us1-chart').offsetWidth * 1.2, document.getElementById('us1-chart').offsetHeight * 1.5))
