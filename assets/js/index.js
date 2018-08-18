@@ -191,6 +191,10 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
   const chart1Key = title1Circulation.dimension((d) => `${d.state_region},${d.sampled_issue_date}`)
   const chart1Group = chart1Key.group().reduceSum(d => d.sampled_total_sales)
   const chart1Total = chart1Group.all().reduce((a, b) => ({value: a.value + b.value}))
+  const chart1GroupOverPop = chart1Key.group().reduceSum(d => d.sampled_total_sales / d.state_population * 100 ) // percentage)
+  const chart1GroupOverTotal = chart1Key.group().reduceSum(d => d.sampled_total_sales / chart1Total.value * 100)
+  console.log('chart1GRoup', chart1GroupOverTotal.all().reduce((a, b) => ({value: a.value + b.value})) )
+
   const dimension1 = title1Circulation.dimension(d => d.actual_issue_date)
   const genericCirculationGroup = dimension1.group().all()
   const circulationGroup1 = dimension1.group().reduceSum(d => d.issue_circulation)
@@ -204,16 +208,32 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
     console.log(circulationValuesMap)
   }
 
+  const returnGroup = () => {
+    if (us1ChartRenderOption === 'percentOfPopulation') {
+      console.log('returning pop', chart1GroupOverPop)
+      return chart1GroupOverPop
+    } else if (us1ChartRenderOption === 'percentOfTotal') {
+      console.log('returning total', chart1GroupOverTotal)
+      return chart1GroupOverTotal
+    } else {
+      console.log('returning raw data', chart1Group)
+      return chart1Group
+    }
+  }
+
   generateValuesMap()
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
-        us1Chart.updateColorScale = () => us1Chart.colorDomain(generateScale(chart1Group))
+        us1Chart.customUpdate = () => {
+          us1Chart.colorDomain(generateScale(returnGroup()))
+          us1Chart.group(repairGeoKey(returnGroup()))
+        }
         us1Chart.width(us1Width)
                 .height(us1Height)
                 .dimension(title1States)
-                .group(repairGeoKey(chart1Group))
+                .group(repairGeoKey(returnGroup()))
                 .colors(d3.scaleQuantize().range(colorScales.blue))
-                .colorDomain(generateScale(chart1Group))
+                .colorDomain(generateScale(returnGroup()))
                 .colorAccessor(d => {
                   return d ? d : 0
                 })
@@ -225,14 +245,12 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                   .translate([document.getElementById('us1-chart').offsetWidth / 2, document.getElementById('us1-chart').offsetHeight / 2.5])
                 )
                 .valueAccessor(function(kv) {
-                    // console.log('Running value accessor', kv)
-                    return transformValue(kv.value, 1000, chart1Total.value) // TODO: replace 1000 with some semblance of state population data
+                    return kv.value
                 })
                 .title(function (d) {
                     return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
                 })
                 .on('filtered', () => {
-                  console.log(circulationGroup1.all()[0])
                   generateValuesMap()
                 })
 

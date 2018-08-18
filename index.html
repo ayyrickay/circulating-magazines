@@ -24,19 +24,19 @@
           id="renderOption1"
           name="chart-group-1"
           value="rawData"
-          onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.updateColorScale();dc.redrawAll();"
+          onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.customUpdate();dc.redrawAll();"
           checked>
         <label for="renderOption1">Raw Data</label>
 
         <input type="radio" id="renderOption2"
          name="chart-group-1" value="percentOfPopulation"
-         onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.updateColorScale();dc.redrawAll();"
+         onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.customUpdate();dc.redrawAll();"
          >
         <label for="renderOption2">% of Population</label>
 
         <input type="radio" id="renderOption3"
          name="chart-group-1" value="percentOfTotal"
-         onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.updateColorScale();dc.redrawAll();"
+         onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.customUpdate();dc.redrawAll();"
          >
         <label for="renderOption3">% of Total</label>
       </form>
