@@ -4,10 +4,29 @@ const us1Chart = dc.geoChoroplethChart("#us1-chart")
 let us1ChartRenderOption = 'rawData'
 // const us2Chart = dc.geoChoroplethChart("#us2-chart")
 const lineChart1 = dc.lineChart("#line-chart-1")
+const lineChart1Range = dc.barChart("#line-chart-1-range")
 const us1Width = document.getElementById('us1-chart').offsetWidth
 const us1Height = document.getElementById('us1-chart').offsetHeight
 const lineChart1Width = document.getElementById('line-chart-1').offsetWidth
 const lineChart1Height = document.getElementById('line-chart-1').offsetHeight
+
+const getWidth = (element) => {
+  if (document.getElementById(element)) {
+    return document.getElementById('line-chart-1').offsetWidth
+  } else {
+    console.error(`No element found with ID ${element}`)
+    return 0
+  }
+}
+
+const getHeight = (element) => {
+  if (document.getElementById(element)) {
+    return document.getElementById('line-chart-1').offsetHeight
+  } else {
+    console.error(`No element found with ID ${element}`)
+    return 0
+  }
+}
 
 
 const stateCodes = {
@@ -98,29 +117,48 @@ const generateScale = (chartGroup) =>  {
   }
 }
 
-// Replace this method; it doesn't so much repair the geokey as it generates a new group
+// Complex method; it doesn't so much repair the geokey as it generates a new group
 const repairGeoKey = (sourceGroup) => {
-  console.log(sourceGroup.all().length)
-    return {
-        all: () => {
-            return sourceGroup.all().map((d) => {
-              const dimensions = d.key.split(',')
-              d.key = dimensions[0]
-              return d
-            })
-        }
+
+  // repair the key for the group (focus on state, not the deduped dates)
+  const cleanGeoGroup = sourceGroup.all().map((d) => {
+    const dimensions = d.key.split(',')
+    d.key = dimensions[0]
+    return d
+  })
+
+  // Create an object to collapse states into one group
+  const consolidatedObject = {}
+
+  for (let i = 0; i < cleanGeoGroup.length - 1; i++) {
+    if (consolidatedObject[cleanGeoGroup[i].key]) {
+      consolidatedObject[cleanGeoGroup[i].key] += cleanGeoGroup[i].value
+    } else {
+      consolidatedObject[cleanGeoGroup[i].key] = cleanGeoGroup[i].value
     }
+  }
+
+  // Transform object back into array of objects
+  const consolidatedArray = Object.keys(consolidatedObject).map((key) => {
+    return {key: key, value: consolidatedObject[key]}
+  })
+
+  // return object array as a pseudo crossfilter 'group'
+  return {
+      all: () => {
+          return consolidatedArray
+      }
+  }
 }
 
 window.onresize = (event) => {
-  const newlineChart1Width = document.getElementById('line-chart-1').offsetWidth - 75
-  const newlineChart1Height = document.getElementById('line-chart-1').offsetHeight - 50
-  lineChart1.width(newlineChart1Width).height(newlineChart1Height).transitionDuration(0)
-  us1Chart.projection(d3.geoAlbersUsa()
-    .scale(Math.min(document.getElementById('us1-chart').offsetWidth * 1.2, document.getElementById('us1-chart').offsetHeight * 1.5))
-    .translate([document.getElementById('us1-chart').offsetWidth / 2, document.getElementById('us1-chart').offsetHeight / 2.5])
-  )
-  .transitionDuration(0)
+  lineChart1.width(getWidth('line-chart-1') - 50).height(getHeight('line-chart-1') - 50).transitionDuration(0)
+  us1Chart
+    .projection(d3.geoAlbersUsa()
+      .scale(Math.min(getWidth('us1-chart') * 2.5, getHeight('us1-chart') * 1.7))
+      .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
+    )
+    .transitionDuration(0)
   // us2Chart.projection(d3.geoAlbersUsa()
   //   .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
   //   .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
@@ -167,7 +205,7 @@ const getTopValue = (group) => {
 //     const geodata = crossfilter(data[0])
 //     const circulation = crossfilter(data[1])
 //     const states = geodata.dimension(d => d.State)
-//     const chart1Key = geodata.dimension((d) => `${d["Title"]},${d["State/Region"]}`)
+//     const stateAndDate = geodata.dimension((d) => `${d["Title"]},${d["State/Region"]}`)
 //     const chart2Key = geodata.dimension((d) => `${d["Title"]},${d["State/Region"]}`)
 
 d3.json("./assets/data/joined_data.json").then((unparsedData) => {
@@ -186,38 +224,42 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                       })
 
   document.getElementById('magazine-title-1').innerHTML = title1Data[0].magazine_title
+  // Create crossfilter
   const title1Circulation = crossfilter(title1Data)
+
+  // Generate dimensions and groups for choropleth
   const title1States = title1Circulation.dimension(d => d.state_region)
-  const chart1Key = title1Circulation.dimension((d) => `${d.state_region},${d.sampled_issue_date}`)
-  const chart1Group = chart1Key.group().reduceSum(d => d.sampled_total_sales)
-  const chart1Total = chart1Group.all().reduce((a, b) => ({value: a.value + b.value}))
-  const chart1GroupOverPop = chart1Key.group().reduceSum(d => d.sampled_total_sales / d.state_population * 100 ) // percentage)
-  const chart1GroupOverTotal = chart1Key.group().reduceSum(d => d.sampled_total_sales / chart1Total.value * 100)
-  console.log('chart1GRoup', chart1GroupOverTotal.all().reduce((a, b) => ({value: a.value + b.value})) )
+  const stateAndDate = title1Circulation.dimension((d) => `${d.state_region},${d.sampled_issue_date}`)
+  const salesByState = stateAndDate.group().reduceSum(d => d.sampled_total_sales)
+  const totalSalesByState = salesByState.all().reduce((a, b) => ({value: a.value + b.value}))
+  const salesByStateOverPop = stateAndDate.group().reduceSum(d => d.sampled_total_sales / d.state_population * 100 ) // percentage
+  const salesByStateOverTotal = stateAndDate.group().reduceSum(d => d.sampled_total_sales / totalSalesByState.value * 100) // percentage
 
-  const dimension1 = title1Circulation.dimension(d => d.actual_issue_date)
-  const genericCirculationGroup = dimension1.group().all()
-  const circulationGroup1 = dimension1.group().reduceSum(d => d.issue_circulation)
+  // generate dimensions and groups for line/range chart
+  const title1Dates = title1Circulation.dimension(d => d.actual_issue_date)
+  const genericCirculationGroup = title1Dates.group().all()
+  const title1CirculationByDate = title1Dates.group().reduceSum(d => d.issue_circulation)
+
+  // Generate a map of circulation values
   let circulationValuesMap = {}
-
   const generateValuesMap = () => {
-    console.log('running values map')
     for(let i = 0; i < genericCirculationGroup.length; i++) {
         circulationValuesMap[genericCirculationGroup[i].key] = genericCirculationGroup[i].value
     }
-    console.log(circulationValuesMap)
+    // console.log(circulationValuesMap)
   }
 
+  // Understands how to return the appropriate group for choropleth visualization
   const returnGroup = () => {
     if (us1ChartRenderOption === 'percentOfPopulation') {
-      console.log('returning pop', chart1GroupOverPop)
-      return chart1GroupOverPop
+      // console.trace('returning pop', salesByStateOverPop)
+      return salesByStateOverPop
     } else if (us1ChartRenderOption === 'percentOfTotal') {
-      console.log('returning total', chart1GroupOverTotal)
-      return chart1GroupOverTotal
+      // console.trace('returning total', salesByStateOverTotal)
+      return salesByStateOverTotal
     } else {
-      console.log('returning raw data', chart1Group)
-      return chart1Group
+      // console.trace('returning raw data', salesByState)
+      return salesByState
     }
   }
 
@@ -225,6 +267,7 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
+          // console.log(`Returned group is ${JSON.stringify(returnGroup().all())}`)
           us1Chart.colorDomain(generateScale(returnGroup()))
           us1Chart.group(repairGeoKey(returnGroup()))
         }
@@ -241,8 +284,8 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                     return d.properties.name
                 })
                 .projection(d3.geoAlbersUsa()
-                  .scale(Math.min(document.getElementById('us1-chart').offsetWidth * 1.2, document.getElementById('us1-chart').offsetHeight * 1.5))
-                  .translate([document.getElementById('us1-chart').offsetWidth / 2, document.getElementById('us1-chart').offsetHeight / 2.5])
+                  .scale(Math.min(getWidth('us1-chart') * 2.5, getHeight('us1-chart') * 1.7))
+                  .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
                 )
                 .valueAccessor(function(kv) {
                     return kv.value
@@ -250,17 +293,15 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                 .title(function (d) {
                     return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
                 })
-                .on('filtered', () => {
-                  generateValuesMap()
-                })
 
         lineChart1
           .width(lineChart1Width-50)
           .height(lineChart1Height-50)
           .xUnits(d3.timeMonths)
           .margins({ top: 10, right: 10, bottom: 20, left: 80 })
-          .dimension(dimension1)
-          .group(circulationGroup1)
+          .dimension(title1Dates)
+          .rangeChart(lineChart1Range)
+          .group(title1CirculationByDate)
           .colors(colorScales.blue[colorScales.blue.length - 1])
           .elasticY(true)
           .brushOn(false)
@@ -268,10 +309,35 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
               return d.value / circulationValuesMap[d.key]
           })
           .title(function (d) {
+            // console.log(d.key)
               return `${d.key.format('mmm dd, yyyy')}\nCirculation: ${d.value / circulationValuesMap[d.key]} `
           })
           .x(d3.scaleTime().domain([new Date(1925, 0, 1), new Date(1927, 0, 1)]))
           .render()
+
+
+        lineChart1Range
+          .width(lineChart1Width-50)
+          .height(40)
+          .margins({ top: 10, right: 10, bottom: 20, left: 80 })
+          .dimension(title1Dates)
+          .group(title1CirculationByDate)
+          .valueAccessor(d => d.value / circulationValuesMap[d.key])
+          .centerBar(true)
+          .x(d3.scaleTime().domain([new Date(1925, 0, 1), new Date(1927, 0, 1)]))
+          .round(d3.timeMonth.round)
+          .alwaysUseRounding(true)
+          .xUnits(() => 200);
+
+        lineChart1Range.yAxis().ticks(0)
+
+        // Establish global chart filter method
+        dc.chartRegistry.list().forEach((chart) => {
+          chart.on('filtered', () => {
+            generateValuesMap()
+            us1Chart.customUpdate()
+          })
+        })
 
         dc.renderAll()
     })

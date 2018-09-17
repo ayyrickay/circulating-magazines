@@ -50,9 +50,17 @@ body {
   grid-row: 2/6; */
 }
 
+.line-chart-container {
+  display: flex;
+  flex-flow: column;
+}
+
 #line-chart-1 {
-  grid-column: 7/13;
-  grid-row: 2/6;
+  height: 15em;
+}
+
+#line-chart-1-range {
+  height: 2em;
 }
 
 .axis {
@@ -84,4 +92,37 @@ body {
 .hover-line {
   stroke: steelblue;
   stroke-width: 1px;
+}
+
+.switch-field {
+  display: flex;
+  margin-bottom: 0.5em;
+}
+
+.switch-field input {
+    position: absolute !important;
+    clip: rect(0, 0, 0, 0);
+    height: 1px;
+    width: 1px;
+    border: 0;
+    overflow: hidden;
+}
+
+.switch-field label {
+  background-color: #e4e4e4;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 14px;
+  text-align: center;
+  text-shadow: none;
+  padding: 6px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  transition: all 0.1s ease-in-out;
+}
+
+.switch-field label:hover {
+    cursor: pointer;
+}
+
+.switch-field input:checked + label {
+  background-color: #A5DC86;
 }
