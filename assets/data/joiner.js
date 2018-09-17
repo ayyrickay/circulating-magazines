@@ -12,6 +12,23 @@
 const fs = require('fs')
 const geoData = require('./node-geodata')
 const circulationData = require('./node-circulation')
+const populationData = require('./node_population_by_state')
+
+const getDecade = (date) => {
+  const year = date.getFullYear()
+  const yearArray = year.toString().split('')
+  yearArray[yearArray.length - 1] = 0
+  return yearArray.join('')
+}
+
+const getPopulation = (state, year) => {
+  const stateObject = populationData.populationData[state]
+  if (!stateObject) {
+    return stateObject
+  } else {
+    return parseInt(stateObject[getDecade(year)])
+  }
+}
 
 const revisedGeoData = geoData.geoData.map(data => {
   const periodEndingComponents = data['Period Ending'].split('/')
@@ -21,6 +38,7 @@ const revisedGeoData = geoData.geoData.map(data => {
     sample_period_ending: periodEnding,
     sample_period_start: periodStart,
     state_region: data['State/Region'],
+    state_population: getPopulation(data['State/Region'], periodEnding),
     sampled_mail_subscriptions: data['Mail Subscriptions'],
     sampled_single_copy_sales: data['Single Copy Sales'],
     sampled_total_sales: data.Total,
@@ -57,7 +75,9 @@ const joinedData = revisedGeoData.map(geoJoin)
 
 const finalData = [].concat.apply([], joinedData)
 
-fs.writeFile('./assets/data/joined_data.json', JSON.stringify(finalData), 'utf8', (err) => {
+console.log(finalData[0])
+
+fs.writeFile('joined_data.json', JSON.stringify(finalData), 'utf8', (err) => {
   if (err) throw err
   console.log('Successfully joined data')
 })
