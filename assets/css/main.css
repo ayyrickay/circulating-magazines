@@ -126,3 +126,14 @@ body {
 .switch-field input:checked + label {
   background-color: #A5DC86;
 }
+
+.tooltip {
+  background-color: #fff;
+  border: 1px #36454f solid;
+  border-radius: 1px;
+}
+
+.tooltip key {
+  text-transform: uppercase;
+  color: #36454f;
+}
