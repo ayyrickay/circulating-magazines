@@ -1,4 +1,4 @@
-[
+module.exports.circulationData = [
   {
     "magazine": "Saturday Evening Post",
     "year": 1924,

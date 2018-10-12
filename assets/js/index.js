@@ -1,5 +1,5 @@
 const numberFormat = d3.format(".2f")
-const sources = ["./assets/data/rawData/saev-geodata.json", "./assets/data/rawData/saev-circulation.json"];
+const sources = ["./assets/data/saev-geodata-clean.json", "./assets/data/saev-circulation-clean.json"];
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
 let us1ChartRenderOption = 'rawData'
 // const us2Chart = dc.geoChoroplethChart("#us2-chart")
@@ -109,11 +109,9 @@ const transformValue = (data, statePopulation, total) => {
 }
 
 const generateScale = (chartGroup) =>  {
-  // console.log('generating new scale based on', us1ChartRenderOption)
   if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
-    console.log(chartGroup.all(), getTopValue(chartGroup))
     return [0, getTopValue(chartGroup)]
   }
 }
@@ -137,16 +135,12 @@ window.onresize = (event) => {
   lineChart1.transitionDuration(750)
 }
 
-const getTopValue = (group) => {
-  // console.log(d3.max(group.all(), d => d.value), group.all())
-  return d3.max(group.all(), d => d.value) // TODO: Parse value string if needed
-}
+const getTopValue = (group) => d3.max(group.all(), d => d.value)
 
 const lineTip = d3.tip()
   .attr('class', 'tooltip')
   .offset([-10, 0])
   .html((d) => {
-    console.log(d)
     return `
     <div class="tooltip-data">
       <h4 class="key">Date</h4>
@@ -163,7 +157,6 @@ const lineTip = d3.tip()
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      console.log(d)
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
@@ -181,60 +174,49 @@ const lineTip = d3.tip()
 
 Promise.all(sources.map(url => d3.json(url)))
 .then((data) => {
-
   const title1GeoData = data[0].filter(data => {
-    return data["Title"] === "Saturday Evening Post" && stateCodes[data["State/Region"]]
+    return data.magazine_title === "Saturday Evening Post" && stateCodes[data.state_region]
   })
 
   const title1Circulation = data[1].filter(data => {
-    return data["magazine"] === "Saturday Evening Post"
+    return data.magazine_title === "Saturday Evening Post"
   })
 
   title1Circulation.forEach(d => {
-    d.actual_issue_date = new Date(d.year, d.month-1, d.day)
-  })
-
-  title1GeoData.forEach(d => {
-    const periodEndingComponents = d['Period Ending'].split('/')
-    d.periodEnding = new Date(`19${periodEndingComponents[2]}`, parseInt(periodEndingComponents[0])-1, periodEndingComponents[1])
+    d.actual_issue_date = new Date(d.actual_issue_date)
   })
 
   const geodata = crossfilter(title1GeoData)
   const circulation = crossfilter(title1Circulation)
 
   // Generate dimensions and groups for choropleth
-  const title1States = geodata.dimension(d => d.State)
-  const stateRegion = geodata.dimension((d) => d["State/Region"])
-  const samplePeriodEnd = geodata.dimension(d => d.periodEnding)
-  const salesByState = stateRegion.group().reduceSum((d) => d["Total"])
+  const title1States = geodata.dimension(d => d.state_region)
+  const stateRegion = geodata.dimension((d) => d.state_region)
+  const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
+  const salesByState = stateRegion.group().reduceSum((d) => d.sampled_total_sales)
   const totalSalesByState = salesByState.all().reduce((a, b) => ({value: a.value + b.value}))
 
-  console.log(totalSalesByState.value)
-  const salesByStateOverPop = stateRegion.group().reduceSum(d => d["Total"] / 100 ) // TODO: Replace 100 with a STATE_POPULATION variable
-  const salesByStateOverTotal = stateRegion.group().reduceSum(d => d["Total"] / totalSalesByState.value * 100) // percentage
+  const salesByStateOverPop = stateRegion.group().reduceSum(d => d.sampled_total_sales / d.state_population ) // TODO: Replace 100 with a STATE_POPULATION variable
+  const salesByStateOverTotal = stateRegion.group().reduceSum(d => d.sampled_total_sales / totalSalesByState.value) // percentage
 
   // generate dimensions and groups for line/range chart
   const title1Dates = circulation.dimension(d => d.actual_issue_date)
   const genericCirculationGroup = title1Dates.group().all()
-  const title1CirculationByDate = title1Dates.group().reduceSum(d => d._circulation)
+  const title1CirculationByDate = title1Dates.group().reduceSum(d => d.issue_circulation)
 
   // Understands how to return the appropriate group for choropleth visualization
   const returnGroup = () => {
     if (us1ChartRenderOption === 'percentOfPopulation') {
-      // console.trace('returning pop', salesByStateOverPop)
       return salesByStateOverPop
     } else if (us1ChartRenderOption === 'percentOfTotal') {
-      // console.trace('returning total', salesByStateOverTotal)
       return salesByStateOverTotal
     } else {
-      // console.trace('returning raw data', salesByState)
       return salesByState
     }
   }
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
-          // console.log(`Returned group is ${JSON.stringify(returnGroup().all())}`)
           us1Chart.colorDomain(generateScale(returnGroup()))
           us1Chart.group(returnGroup())
         }
@@ -259,7 +241,6 @@ Promise.all(sources.map(url => d3.json(url)))
                 })
                 .renderTitle(false)
                 .on('pretransition', (chart) => {
-                    console.log(chart.selectAll('g'))
                     chart.selectAll('g')
                         .call(mapTip)
                         .on('mouseover.mapTip', mapTip.show)
@@ -290,14 +271,12 @@ Promise.all(sources.map(url => d3.json(url)))
                 const periodStart = new Date(new Date(periodEnding).setMonth(periodEnding.getMonth() - 6))
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
-              console.log('initial', samplePeriodEnd)
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
             })
 
             chart.selectAll('circle').on('mouseleave', (selected) => {
               samplePeriodEnd.filter(null)
-              console.log('after', us1Chart.filters())
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
             })
