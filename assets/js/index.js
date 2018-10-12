@@ -1,5 +1,5 @@
 const numberFormat = d3.format(".2f")
-const sources = ["./assets/data/rawData/geodata.json", "./assets/data/rawData/circulation.json"];
+const sources = ["./assets/data/rawData/saev-geodata.json", "./assets/data/rawData/saev-circulation.json"];
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
 let us1ChartRenderOption = 'rawData'
 // const us2Chart = dc.geoChoroplethChart("#us2-chart")
@@ -148,10 +148,33 @@ const lineTip = d3.tip()
   .html((d) => {
     console.log(d)
     return `
-    <p><span class="key">Date:</span> <span style='color:red'>${d.data.key.format('mmm dd, yyyy')}</span></p>
-    <p><span class="key">Circulation:</span> <span style='color:red'>${d.data.value} issues</span></p>
+    <div class="tooltip-data">
+      <h4 class="key">Date</h4>
+      <p>${d.data.key.format('mmm dd, yyyy')}</p>
+    </div>
+    <div class="tooltip-data">
+      <h4 class="key">Circulation</h4>
+      <p> ${d.data.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+    </div>
     `
   })
+
+  const mapTip = d3.tip()
+    .attr('class', 'tooltip')
+    .offset([-10, 0])
+    .html((d) => {
+      console.log(d)
+      return `
+      <div class="tooltip-data">
+        <h4 class="key">State</h4>
+        <p>${d.properties.name}</p>
+      </div>
+      <div class="tooltip-data">
+        <h4 class="key">Circulation</h4>
+        <p> ${d.properties.density.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+      </div>
+      `
+    })
 
 // const industryChart = dc.bubbleChart("#industry-chart")
 // const roundChart = dc.bubbleChart("#round-chart")
@@ -160,11 +183,11 @@ Promise.all(sources.map(url => d3.json(url)))
 .then((data) => {
 
   const title1GeoData = data[0].filter(data => {
-    return data["Title"] === "New Yorker" && stateCodes[data["State/Region"]]
+    return data["Title"] === "Saturday Evening Post" && stateCodes[data["State/Region"]]
   })
 
   const title1Circulation = data[1].filter(data => {
-    return data["magazine"] === "New Yorker"
+    return data["magazine"] === "Saturday Evening Post"
   })
 
   title1Circulation.forEach(d => {
@@ -173,7 +196,6 @@ Promise.all(sources.map(url => d3.json(url)))
 
   title1GeoData.forEach(d => {
     const periodEndingComponents = d['Period Ending'].split('/')
-    console.log(periodEndingComponents)
     d.periodEnding = new Date(`19${periodEndingComponents[2]}`, parseInt(periodEndingComponents[0])-1, periodEndingComponents[1])
   })
 
@@ -194,7 +216,7 @@ Promise.all(sources.map(url => d3.json(url)))
   // generate dimensions and groups for line/range chart
   const title1Dates = circulation.dimension(d => d.actual_issue_date)
   const genericCirculationGroup = title1Dates.group().all()
-  const title1CirculationByDate = title1Dates.group().reduceSum(d => d.circulation)
+  const title1CirculationByDate = title1Dates.group().reduceSum(d => d._circulation)
 
   // Understands how to return the appropriate group for choropleth visualization
   const returnGroup = () => {
@@ -235,8 +257,13 @@ Promise.all(sources.map(url => d3.json(url)))
                 .valueAccessor(function(kv) {
                     return kv.value
                 })
-                .title(function (d) {
-                    return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
+                .renderTitle(false)
+                .on('pretransition', (chart) => {
+                    console.log(chart.selectAll('g'))
+                    chart.selectAll('g')
+                        .call(mapTip)
+                        .on('mouseover.mapTip', mapTip.show)
+                        .on('mouseout.mapTip', mapTip.hide);
                 })
 
         lineChart1
@@ -254,22 +281,18 @@ Promise.all(sources.map(url => d3.json(url)))
               return d.value
           })
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
+          .renderTitle(false)
           .on('renderlet', (chart) => {
-            // console.log(chart.selectAll('circle'))
-            // chart.querySelector('circle').on('hover')
             chart.selectAll('circle').on('mouseover', (selected) => {
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
                 const periodStart = new Date(new Date(periodEnding).setMonth(periodEnding.getMonth() - 6))
-                // console.log(currentIssueDate, periodStart, periodEnding)
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
               console.log('initial', samplePeriodEnd)
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
-              // console.log(d)
-              // us1Chart.filter(d.datum.key)
             })
 
             chart.selectAll('circle').on('mouseleave', (selected) => {
@@ -277,8 +300,6 @@ Promise.all(sources.map(url => d3.json(url)))
               console.log('after', us1Chart.filters())
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
-              // console.log(d)
-              // us1Chart.filter(d.datum.key)
             })
           })
           .on('pretransition', (chart) => {
