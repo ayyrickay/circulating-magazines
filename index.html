@@ -9,6 +9,7 @@
 
   <link rel="stylesheet" href="assets/css/dc.css">
   <link rel="stylesheet" href="assets/css/main.css">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
 </head>
 
 
@@ -45,7 +46,7 @@
       </form>
       <div class="charts">
         <div id="us1-chart">
-            <strong>Circulation By State (color: total sold)</strong>
+            <h3 class="chart-title">Circulation By State (color: total sold)</h3>
             <a class="reset" href="javascript:us1Chart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
             <div class="clearfix"></div>
             <p class="reset" style="display: none;">Current filter: <span class="filter"></span></p>
@@ -53,7 +54,7 @@
 
         <div class="line-chart-container">
           <div id="line-chart-1">
-              <strong>By Circulation</strong>
+              <h3 class="chart-title">By Circulation</h3>
               <a class="reset" href="javascript:lineChart1.filterAll();lineChart1Range.filterAll();dc.redrawAll();" style="display: none;">reset</a>
 
               <div class="clearfix"></div>
@@ -69,6 +70,7 @@
   <script type="text/javascript" src="assets/js/crossfilter.js"></script>
   <script type="text/javascript" src="assets/js/dc.min.js"></script>
   <script src="assets/js/dateformat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.7.1/d3-tip.min.js"></script>
   <script src="assets/js/index.js"></script>
 </body>
 </html>

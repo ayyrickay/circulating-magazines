@@ -1,5 +1,5 @@
 const numberFormat = d3.format(".2f")
-const sources = ["./assets/data/geodata.json", "./assets/data/circulation.json"];
+const sources = ["./assets/data/rawData/saev-geodata.json", "./assets/data/rawData/saev-circulation.json"];
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
 let us1ChartRenderOption = 'rawData'
 // const us2Chart = dc.geoChoroplethChart("#us2-chart")
@@ -109,45 +109,12 @@ const transformValue = (data, statePopulation, total) => {
 }
 
 const generateScale = (chartGroup) =>  {
-  console.log('generating new scale based on', us1ChartRenderOption)
+  // console.log('generating new scale based on', us1ChartRenderOption)
   if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
+    console.log(chartGroup.all(), getTopValue(chartGroup))
     return [0, getTopValue(chartGroup)]
-  }
-}
-
-// Complex method; it doesn't so much repair the geokey as it generates a new group
-const repairGeoKey = (sourceGroup) => {
-
-  // repair the key for the group (focus on state, not the deduped dates)
-  const cleanGeoGroup = sourceGroup.all().map((d) => {
-    const dimensions = d.key.split(',')
-    d.key = dimensions[0]
-    return d
-  })
-
-  // Create an object to collapse states into one group
-  const consolidatedObject = {}
-
-  for (let i = 0; i < cleanGeoGroup.length - 1; i++) {
-    if (consolidatedObject[cleanGeoGroup[i].key]) {
-      consolidatedObject[cleanGeoGroup[i].key] += cleanGeoGroup[i].value
-    } else {
-      consolidatedObject[cleanGeoGroup[i].key] = cleanGeoGroup[i].value
-    }
-  }
-
-  // Transform object back into array of objects
-  const consolidatedArray = Object.keys(consolidatedObject).map((key) => {
-    return {key: key, value: consolidatedObject[key]}
-  })
-
-  // return object array as a pseudo crossfilter 'group'
-  return {
-      all: () => {
-          return consolidatedArray
-      }
   }
 }
 
@@ -170,84 +137,86 @@ window.onresize = (event) => {
   lineChart1.transitionDuration(750)
 }
 
-const filterCirculationByMagazine = (sourceGroup, magazine) => {
-    return {
-        all: () => {
-          // console.log('sourcegroup', sourceGroup.all())
-            return sourceGroup.all().filter((d) => {
-              const dimensions = d.key ? d.key.split(',') : [null, null]
-              d.key = dimensions[1]
-              return dimensions[0] === magazine
-            })
-        }
-    }
-}
-
-const filterCirculationData = (sourceGroup) => {
-    return {
-        all:function () {
-            return sourceGroup.all().filter(function(d) {
-                return d
-            })
-        }
-    }
-}
-
 const getTopValue = (group) => {
-  return group.top(60)[59].value
+  // console.log(d3.max(group.all(), d => d.value), group.all())
+  return d3.max(group.all(), d => d.value) // TODO: Parse value string if needed
 }
+
+const lineTip = d3.tip()
+  .attr('class', 'tooltip')
+  .offset([-10, 0])
+  .html((d) => {
+    console.log(d)
+    return `
+    <div class="tooltip-data">
+      <h4 class="key">Date</h4>
+      <p>${d.data.key.format('mmm dd, yyyy')}</p>
+    </div>
+    <div class="tooltip-data">
+      <h4 class="key">Circulation</h4>
+      <p> ${d.data.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+    </div>
+    `
+  })
+
+  const mapTip = d3.tip()
+    .attr('class', 'tooltip')
+    .offset([-10, 0])
+    .html((d) => {
+      console.log(d)
+      return `
+      <div class="tooltip-data">
+        <h4 class="key">State</h4>
+        <p>${d.properties.name}</p>
+      </div>
+      <div class="tooltip-data">
+        <h4 class="key">Circulation</h4>
+        <p> ${d.properties.density.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+      </div>
+      `
+    })
 
 // const industryChart = dc.bubbleChart("#industry-chart")
 // const roundChart = dc.bubbleChart("#round-chart")
 
-// Promise.all(sources.map(url => d3.json(url)))
-// .then((data) => {
-//     const geodata = crossfilter(data[0])
-//     const circulation = crossfilter(data[1])
-//     const states = geodata.dimension(d => d.State)
-//     const stateAndDate = geodata.dimension((d) => `${d["Title"]},${d["State/Region"]}`)
-//     const chart2Key = geodata.dimension((d) => `${d["Title"]},${d["State/Region"]}`)
+Promise.all(sources.map(url => d3.json(url)))
+.then((data) => {
 
-d3.json("./assets/data/joined_data.json").then((unparsedData) => {
-
-  const data = unparsedData.map(d => {
-  	d.actual_issue_date = new Date(d.actual_issue_date)
-    return d
+  const title1GeoData = data[0].filter(data => {
+    return data["Title"] === "Saturday Evening Post" && stateCodes[data["State/Region"]]
   })
 
-  const title1Data = data.filter((d) => {
-                        return d.magazine_title === 'New Yorker'
-                      })
+  const title1Circulation = data[1].filter(data => {
+    return data["magazine"] === "Saturday Evening Post"
+  })
 
-  const title2Data = data.filter((d) => {
-                        return d.magazine_title === 'Saturday Evening Post'
-                      })
+  title1Circulation.forEach(d => {
+    d.actual_issue_date = new Date(d.year, d.month-1, d.day)
+  })
 
-  document.getElementById('magazine-title-1').innerHTML = title1Data[0].magazine_title
-  // Create crossfilter
-  const title1Circulation = crossfilter(title1Data)
+  title1GeoData.forEach(d => {
+    const periodEndingComponents = d['Period Ending'].split('/')
+    d.periodEnding = new Date(`19${periodEndingComponents[2]}`, parseInt(periodEndingComponents[0])-1, periodEndingComponents[1])
+  })
+
+  const geodata = crossfilter(title1GeoData)
+  const circulation = crossfilter(title1Circulation)
 
   // Generate dimensions and groups for choropleth
-  const title1States = title1Circulation.dimension(d => d.state_region)
-  const stateAndDate = title1Circulation.dimension((d) => `${d.state_region},${d.sampled_issue_date}`)
-  const salesByState = stateAndDate.group().reduceSum(d => d.sampled_total_sales)
+  const title1States = geodata.dimension(d => d.State)
+  const stateRegion = geodata.dimension((d) => d["State/Region"])
+  const samplePeriodEnd = geodata.dimension(d => d.periodEnding)
+  const salesByState = stateRegion.group().reduceSum((d) => d["Total"])
   const totalSalesByState = salesByState.all().reduce((a, b) => ({value: a.value + b.value}))
-  const salesByStateOverPop = stateAndDate.group().reduceSum(d => d.sampled_total_sales / d.state_population * 100 ) // percentage
-  const salesByStateOverTotal = stateAndDate.group().reduceSum(d => d.sampled_total_sales / totalSalesByState.value * 100) // percentage
+
+  console.log(totalSalesByState.value)
+  const salesByStateOverPop = stateRegion.group().reduceSum(d => d["Total"] / 100 ) // TODO: Replace 100 with a STATE_POPULATION variable
+  const salesByStateOverTotal = stateRegion.group().reduceSum(d => d["Total"] / totalSalesByState.value * 100) // percentage
 
   // generate dimensions and groups for line/range chart
-  const title1Dates = title1Circulation.dimension(d => d.actual_issue_date)
+  const title1Dates = circulation.dimension(d => d.actual_issue_date)
   const genericCirculationGroup = title1Dates.group().all()
-  const title1CirculationByDate = title1Dates.group().reduceSum(d => d.issue_circulation)
-
-  // Generate a map of circulation values
-  let circulationValuesMap = {}
-  const generateValuesMap = () => {
-    for(let i = 0; i < genericCirculationGroup.length; i++) {
-        circulationValuesMap[genericCirculationGroup[i].key] = genericCirculationGroup[i].value
-    }
-    // console.log(circulationValuesMap)
-  }
+  const title1CirculationByDate = title1Dates.group().reduceSum(d => d._circulation)
 
   // Understands how to return the appropriate group for choropleth visualization
   const returnGroup = () => {
@@ -263,18 +232,16 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
     }
   }
 
-  generateValuesMap()
-
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
           // console.log(`Returned group is ${JSON.stringify(returnGroup().all())}`)
           us1Chart.colorDomain(generateScale(returnGroup()))
-          us1Chart.group(repairGeoKey(returnGroup()))
+          us1Chart.group(returnGroup())
         }
         us1Chart.width(us1Width)
                 .height(us1Height)
                 .dimension(title1States)
-                .group(repairGeoKey(returnGroup()))
+                .group(returnGroup())
                 .colors(d3.scaleQuantize().range(colorScales.blue))
                 .colorDomain(generateScale(returnGroup()))
                 .colorAccessor(d => {
@@ -290,8 +257,13 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
                 .valueAccessor(function(kv) {
                     return kv.value
                 })
-                .title(function (d) {
-                    return "State: " + d.key + "\nCirculation Total: " + d.value ? d.value : 0
+                .renderTitle(false)
+                .on('pretransition', (chart) => {
+                    console.log(chart.selectAll('g'))
+                    chart.selectAll('g')
+                        .call(mapTip)
+                        .on('mouseover.mapTip', mapTip.show)
+                        .on('mouseout.mapTip', mapTip.hide);
                 })
 
         lineChart1
@@ -306,13 +278,36 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
           .elasticY(true)
           .brushOn(false)
           .valueAccessor(function (d) {
-              return d.value / circulationValuesMap[d.key]
+              return d.value
           })
-          .title(function (d) {
-            // console.log(d.key)
-              return `${d.key.format('mmm dd, yyyy')}\nCirculation: ${d.value / circulationValuesMap[d.key]} `
+          .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
+          .renderTitle(false)
+          .on('renderlet', (chart) => {
+            chart.selectAll('circle').on('mouseover', (selected) => {
+              samplePeriodEnd.filter(d => {
+                const currentIssueDate = new Date(selected.x)
+                const periodEnding = new Date(d)
+                const periodStart = new Date(new Date(periodEnding).setMonth(periodEnding.getMonth() - 6))
+                return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+              })
+              console.log('initial', samplePeriodEnd)
+              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.redraw()
+            })
+
+            chart.selectAll('circle').on('mouseleave', (selected) => {
+              samplePeriodEnd.filter(null)
+              console.log('after', us1Chart.filters())
+              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.redraw()
+            })
           })
-          .x(d3.scaleTime().domain([new Date(1925, 0, 1), new Date(1927, 0, 1)]))
+          .on('pretransition', (chart) => {
+              chart.selectAll('circle')
+                  .call(lineTip)
+                  .on('mouseover.lineTip', lineTip.show)
+                  .on('mouseout.lineTip', lineTip.hide);
+          })
           .render()
 
 
@@ -322,19 +317,18 @@ d3.json("./assets/data/joined_data.json").then((unparsedData) => {
           .margins({ top: 10, right: 10, bottom: 20, left: 80 })
           .dimension(title1Dates)
           .group(title1CirculationByDate)
-          .valueAccessor(d => d.value / circulationValuesMap[d.key])
+          .valueAccessor(d => d.value)
           .centerBar(true)
-          .x(d3.scaleTime().domain([new Date(1925, 0, 1), new Date(1927, 0, 1)]))
+          .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
           .round(d3.timeMonth.round)
           .alwaysUseRounding(true)
-          .xUnits(() => 200);
+          .xUnits(() => 200)
 
         lineChart1Range.yAxis().ticks(0)
 
         // Establish global chart filter method
         dc.chartRegistry.list().forEach((chart) => {
           chart.on('filtered', () => {
-            generateValuesMap()
             us1Chart.customUpdate()
           })
         })
