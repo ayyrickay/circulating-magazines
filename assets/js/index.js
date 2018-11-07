@@ -112,6 +112,7 @@ const generateScale = (chartGroup) =>  {
   if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
+    console.log([0, getTopValue(chartGroup)])
     return [0, getTopValue(chartGroup)]
   }
 }
@@ -135,39 +136,34 @@ window.onresize = (event) => {
   lineChart1.transitionDuration(750)
 }
 
-const getTopValue = (group) => d3.max(group.all(), d => d.value)
+const getTopValue = (group) => d3.max(group.all(), d => {
+  console.log(d.value.sampled_total_sales)
+  return d.value.sampled_total_sales
+})
 
 const lineTip = d3.tip()
   .attr('class', 'tooltip')
   .offset([-10, 0])
-  .html((d) => {
+  .html(({data: {key, value: {issue_circulation, price, type, publishing_company}}}) => {
     return `
     <div class="tooltip-data">
       <h4 class="key">Date</h4>
-      <p>${d.data.key.format('mmm dd, yyyy')}</p>
+      <p>${key.format('mmm dd, yyyy')}</p>
     </div>
     <div class="tooltip-data">
       <h4 class="key">Circulation</h4>
-      <p> ${d.data.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+      <p> ${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+    </div>
+    <div class="tooltip-data">
+      <h4 class="key">Price</h4>
+      <p>${price}</p>
+    </div>
+    <div class="tooltip-data">
+      <h4 class="key">Publishing Company</h4>
+      <p>${publishing_company ? publishing_company : 'Unkown'}</p>
     </div>
     `
   })
-
-  const mapTip = d3.tip()
-    .attr('class', 'tooltip')
-    .offset([-10, 0])
-    .html((d) => {
-      return `
-      <div class="tooltip-data">
-        <h4 class="key">State</h4>
-        <p>${d.properties.name}</p>
-      </div>
-      <div class="tooltip-data">
-        <h4 class="key">Circulation</h4>
-        <p> ${d.properties.density.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
-      </div>
-      `
-    })
 
 // const industryChart = dc.bubbleChart("#industry-chart")
 // const roundChart = dc.bubbleChart("#round-chart")
@@ -190,19 +186,72 @@ Promise.all(sources.map(url => d3.json(url)))
   const circulation = crossfilter(title1Circulation)
 
   // Generate dimensions and groups for choropleth
-  const title1States = geodata.dimension(d => d.state_region)
   const stateRegion = geodata.dimension((d) => d.state_region)
   const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
-  const salesByState = stateRegion.group().reduceSum((d) => d.sampled_total_sales)
-  const totalSalesByState = salesByState.all().reduce((a, b) => ({value: a.value + b.value}))
+  // const salesByState = stateRegion.group().reduceSum(d => d.sampled_total_sales)
+  const salesByState = stateRegion.group().reduce((p, v) => {
+    ++p.count
+    p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
+    p.sampled_single_copy_sales += v.sampled_single_copy_sales
+    p.sampled_total_sales += v.sampled_total_sales
+    return p
+  },
+  (p, v) => {
+    --p.count
+    p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
+    p.sampled_single_copy_sales -= v.sampled_single_copy_sales
+    p.sampled_total_sales -= v.sampled_total_sales
+    return p
+  },
+  () => ({
+    count: 0,
+    sampled_mail_subscriptions: 0,
+    sampled_single_copy_sales: 0,
+    sampled_total_sales: 0,
+  })
+)
+
+console.log(salesByState.all())
+  const totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
   const salesByStateOverPop = stateRegion.group().reduceSum(d => d.sampled_total_sales / d.state_population ) // TODO: Replace 100 with a STATE_POPULATION variable
-  const salesByStateOverTotal = stateRegion.group().reduceSum(d => d.sampled_total_sales / totalSalesByState.value) // percentage
+  const salesByStateOverTotal = stateRegion.group().reduceSum(d => d.sampled_total_sales / totalSalesByState.value.sampled_total_sales) // percentage
 
   // generate dimensions and groups for line/range chart
   const title1Dates = circulation.dimension(d => d.actual_issue_date)
   const genericCirculationGroup = title1Dates.group().all()
-  const title1CirculationByDate = title1Dates.group().reduceSum(d => d.issue_circulation)
+  const title1CirculationByDate = title1Dates.group().reduce((p, v) => {
+        ++p.count
+        p.issue_circulation += v.issue_circulation
+        p.price = v.price
+        p.type = v.type
+        p.publishing_company = v.publishing_company
+        p.titles_included = v.titles_included
+        p.editor = v.editor
+        return p
+    },
+    /* callback for when data is removed from the current filter results */
+    (p, v) => {
+        --p.count;
+        p.issue_circulation -= v.issue_circulation
+        p.price = v.price
+        p.type = v.type
+        p.publishing_company = v.publishing_company
+        p.titles_included = v.titles_included
+        p.editor = v.editor
+        return p
+    },
+    /* initialize p */
+    () => ({
+            count: 0,
+            issue_circulation: 0,
+            price: "",
+            type: "",
+            publishing_company: "",
+            titles_included: "",
+            editor: ""
+        })
+    )
 
   // Understands how to return the appropriate group for choropleth visualization
   const returnGroup = () => {
@@ -215,6 +264,24 @@ Promise.all(sources.map(url => d3.json(url)))
     }
   }
 
+  const mapTip = d3.tip()
+    .attr('class', 'tooltip')
+    .offset([-10, 0])
+    .html((d) => {
+      const selectedState = returnGroup().all().filter(item => item.key === d.properties.name)[0]
+      console.log(selectedState)
+      return `
+      <div class="tooltip-data">
+        <h4 class="key">State</h4>
+        <p>${selectedState.key}</p>
+      </div>
+      <div class="tooltip-data">
+        <h4 class="key">Circulation</h4>
+        <p> ${selectedState.value.sampled_total_sales.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+      </div>
+      `
+    })
+
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
           us1Chart.colorDomain(generateScale(returnGroup()))
@@ -222,26 +289,29 @@ Promise.all(sources.map(url => d3.json(url)))
         }
         us1Chart.width(us1Width)
                 .height(us1Height)
-                .dimension(title1States)
+                .dimension(stateRegion)
                 .group(returnGroup())
                 .colors(d3.scaleQuantize().range(colorScales.blue))
                 .colorDomain(generateScale(returnGroup()))
                 .colorAccessor(d => {
+                  // console.log('colorAccessor:', d)
                   return d ? d : 0
                 })
-                .overlayGeoJson(statesJson.features, "state", function (d) {
-                    return d.properties.name
+                .overlayGeoJson(statesJson.features, "state", d => {
+                  // console.log(`geojson`, d, d.properties.name)
+                  return d.properties.name
                 })
                 .projection(d3.geoAlbersUsa()
                   .scale(Math.min(getWidth('us1-chart') * 2.5, getHeight('us1-chart') * 1.7))
                   .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
                 )
-                .valueAccessor(function(kv) {
-                    return kv.value
+                .valueAccessor(kv => {
+                  // console.log(kv.value)
+                  if(kv.value !== undefined) return kv.value
                 })
                 .renderTitle(false)
                 .on('pretransition', (chart) => {
-                    chart.selectAll('g')
+                    chart.selectAll('path')
                         .call(mapTip)
                         .on('mouseover.mapTip', mapTip.show)
                         .on('mouseout.mapTip', mapTip.hide);
@@ -258,13 +328,12 @@ Promise.all(sources.map(url => d3.json(url)))
           .colors(colorScales.blue[colorScales.blue.length - 1])
           .elasticY(true)
           .brushOn(false)
-          .valueAccessor(function (d) {
-              return d.value
-          })
+          .valueAccessor(d => d.value.issue_circulation)
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
           .renderTitle(false)
           .on('renderlet', (chart) => {
             chart.selectAll('circle').on('mouseover', (selected) => {
+              // console.log(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
@@ -296,7 +365,7 @@ Promise.all(sources.map(url => d3.json(url)))
           .margins({ top: 10, right: 10, bottom: 20, left: 80 })
           .dimension(title1Dates)
           .group(title1CirculationByDate)
-          .valueAccessor(d => d.value)
+          .valueAccessor(d => d.value.issue_circulation)
           .centerBar(true)
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
           .round(d3.timeMonth.round)
