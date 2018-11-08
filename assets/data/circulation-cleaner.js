@@ -24,7 +24,6 @@ const getDecade = (date) => {
 }
 
 const cleanCirculation = circulationData.circulationData.map(match => {
-  console.log(match.year, match.month, match.day || 1)
   return ({
         actual_issue_date: new Date(match.year, match.month-1, `${match.day || 1}`),
         issue_circulation: match._circulation,
