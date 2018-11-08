@@ -112,6 +112,7 @@ const generateScale = (chartGroup) =>  {
   if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
+    console.log([0, getTopValue(chartGroup)])
     return [0, getTopValue(chartGroup)]
   }
 }
@@ -318,6 +319,7 @@ const renderCharts = (data) => {
           .renderTitle(false)
           .on('renderlet', (chart) => {
             chart.selectAll('circle').on('mouseover', (selected) => {
+              console.log('Before', salesByState.all()[0].value.sampled_total_sales)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
