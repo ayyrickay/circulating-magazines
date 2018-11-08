@@ -160,6 +160,7 @@ const lineTip = d3.tip()
 
 const renderCharts = (data) => {
   const title1GeoData = data[0].filter(data => {
+    if (!data) return false
     return stateCodes[data.state_region]
   })
 
@@ -172,31 +173,33 @@ const renderCharts = (data) => {
   const geodata = crossfilter(title1GeoData)
   const circulation = crossfilter(title1Circulation)
 
-  // Generate dimensions and groups for choropleth
-  const stateRegion = geodata.dimension((d) => d.state_region)
-  const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
-  // const salesByState = stateRegion.group().reduceSum(d => d.sampled_total_sales)
-  const salesByState = stateRegion.group().reduce((p, v) => {
+  // Reducer function for geodata
+  const geoReducerAdd = (p, v) => {
     ++p.count
     p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
     p.sampled_single_copy_sales += v.sampled_single_copy_sales
     p.sampled_total_sales += v.sampled_total_sales
     return p
-  },
-  (p, v) => {
+  }
+  const geoReducerRemove = (p, v) => {
     --p.count
     p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
     p.sampled_single_copy_sales -= v.sampled_single_copy_sales
     p.sampled_total_sales -= v.sampled_total_sales
     return p
-  },
-  () => ({
+  }
+
+  const geoReducerDefault = () => ({
     count: 0,
     sampled_mail_subscriptions: 0,
     sampled_single_copy_sales: 0,
     sampled_total_sales: 0,
   })
-)
+
+  // Generate dimensions and groups for choropleth
+  const stateRegion = geodata.dimension((d) => d.state_region)
+  const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
+  const salesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
 
   const totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
@@ -321,6 +324,7 @@ const renderCharts = (data) => {
                 const periodStart = new Date(new Date(periodEnding).setMonth(periodEnding.getMonth() - 6))
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
+
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
             })
@@ -335,7 +339,7 @@ const renderCharts = (data) => {
               chart.selectAll('circle')
                   .call(lineTip)
                   .on('mouseover.lineTip', lineTip.show)
-                  .on('mouseout.lineTip', lineTip.hide);
+                  .on('mouseout.lineTip', lineTip.hide)
           })
           .render()
 
