@@ -23,20 +23,23 @@ const getDecade = (date) => {
   return yearArray.join('')
 }
 
-const cleanCirculation = circulationData.circulationData.map(match => ({
-      actual_issue_date: new Date(match.year, match.month-1, match.day),
-      issue_circulation: match._circulation,
-      price: match._price,
-      type: match.type,
-      publishing_company: match['publishing company'],
-      titles_included: match['titles included'],
-      editor: match.editor,
-      magazine_id: match.magazine_id,
-      type_id: match.type_id,
-      circulation_for_db: match.circulation_for_db,
-      price_for_db: match.price_for_db,
-      magazine_title: match.magazine
-    })
+const cleanCirculation = circulationData.circulationData.map(match => {
+  console.log(match.year, match.month, match.day || 1)
+  return ({
+        actual_issue_date: new Date(match.year, match.month-1, `${match.day || 1}`),
+        issue_circulation: match._circulation,
+        price: match._price,
+        type: match.type,
+        publishing_company: match['publishing company'],
+        titles_included: match['titles included'],
+        editor: match.editor,
+        magazine_id: match.magazine_id,
+        type_id: match.type_id,
+        circulation_for_db: match.circulation_for_db,
+        price_for_db: match.price_for_db,
+        magazine_title: match.magazine
+      })
+}
   )
 
 

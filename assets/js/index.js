@@ -112,7 +112,6 @@ const generateScale = (chartGroup) =>  {
   if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
-    console.log([0, getTopValue(chartGroup)])
     return [0, getTopValue(chartGroup)]
   }
 }
@@ -125,19 +124,13 @@ window.onresize = (event) => {
       .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
     )
     .transitionDuration(0)
-  // us2Chart.projection(d3.geoAlbersUsa()
-  //   .scale(Math.min(document.getElementById('us2-chart').offsetWidth * 1.2, document.getElementById('us2-chart').offsetHeight * 1.5))
-  //   .translate([document.getElementById('us2-chart').offsetWidth / 2, document.getElementById('us2-chart').offsetHeight / 2.5])
-  // ).transitionDuration(0)
 
   dc.renderAll()
   us1Chart.transitionDuration(750)
-  // us2Chart.transitionDuration(750)
   lineChart1.transitionDuration(750)
 }
 
 const getTopValue = (group) => d3.max(group.all(), d => {
-  // console.log(d.value.sampled_total_sales)
   return d.value.sampled_total_sales
 })
 
@@ -166,8 +159,9 @@ const lineTip = d3.tip()
   })
 
 const renderCharts = (data) => {
-  console.log(data[0][0])
-  const title1GeoData = data[0].filter(data => stateCodes[data.state_region])
+  const title1GeoData = data[0].filter(data => {
+    return stateCodes[data.state_region]
+  })
 
   const title1Circulation = data[1]
 
@@ -261,7 +255,6 @@ const renderCharts = (data) => {
     .offset([-10, 0])
     .html((d) => {
       const selectedState = returnGroup().all().filter(item => item.key === d.properties.name)[0]
-      console.log(selectedState)
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
@@ -286,11 +279,9 @@ const renderCharts = (data) => {
                 .colors(d3.scaleQuantize().range(colorScales.blue))
                 .colorDomain(generateScale(returnGroup()))
                 .colorAccessor(d => {
-                  // console.log('colorAccessor:', d)
                   return d ? d : 0
                 })
                 .overlayGeoJson(statesJson.features, "state", d => {
-                  // console.log(`geojson`, d, d.properties.name)
                   return d.properties.name
                 })
                 .projection(d3.geoAlbersUsa()
@@ -324,7 +315,6 @@ const renderCharts = (data) => {
           .renderTitle(false)
           .on('renderlet', (chart) => {
             chart.selectAll('circle').on('mouseover', (selected) => {
-              // console.log(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
@@ -377,7 +367,6 @@ const renderCharts = (data) => {
 }
 
 const generateCharts = () => {
-  console.log('generating charts for', titleSelector.value)
   Promise.all([`./assets/data/${titleSelector.value}-geodata.json`, `./assets/data/${titleSelector.value}-circulation.json`].map(url => d3.json(url)))
   .then(renderCharts)
 }
