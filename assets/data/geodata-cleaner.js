@@ -40,8 +40,9 @@ const getPopulation = (state, year) => {
 }
 
 const revisedGeoData = geoData.geodata.map(data => {
-  const periodEndingComponents = data['Period Ending'].split('/')
-  const periodEnding = new Date(`19${periodEndingComponents[2]}`, parseInt(periodEndingComponents[0])-1, periodEndingComponents[1])
+  const [month, day, year] = data['Period Ending'].split('/')
+  if (!year) return console.log(data)
+  const periodEnding = new Date(year.indexOf('19') < -1 ? `19${year}` : year, parseInt(month)-1, day)
   const periodStart = new Date(new Date(periodEnding).setMonth(periodEnding.getMonth() - 6))
   return {
     sample_period_ending: periodEnding,

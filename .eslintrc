@@ -42,7 +42,7 @@
   "rules": {
     ////////// Possible Errors //////////
 
-    "no-comma-dangle": 2,         // disallow trailing commas in object literals
+    "comma-dangle": 2,         // disallow trailing commas in object literals
     "no-cond-assign": 0,          // disallow assignment in conditional expressions
     "no-console": 1,              // disallow use of console (off by default in the node environment)
     "no-constant-condition": 0,   // disallow use of constant expressions in conditions
@@ -50,7 +50,6 @@
     "no-debugger": 0,             // disallow use of debugger
     "no-dupe-keys": 2,            // disallow duplicate keys when creating object literals
     "no-empty": 2,                // disallow empty statements
-    "no-empty-class": 2,          // disallow the use of empty character classes in regular expressions
     "no-ex-assign": 2,            // disallow assigning to the exception in a catch block
     "no-extra-boolean-cast": 0,   // disallow double-negation boolean casts in a boolean context
     "no-extra-parens": 2,         // disallow unnecessary parentheses (off by default)
