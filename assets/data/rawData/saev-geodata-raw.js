@@ -1,4 +1,4 @@
-module.exports.geoData = [
+module.exports.geodata = [
   {
     "Key": "SAEV",
     "Title": "Saturday Evening Post",

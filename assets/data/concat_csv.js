@@ -4,7 +4,7 @@
  * EXAMPLE
  * node concat_csv.js rawData/Geo_Files_CSV NEYO
  */
- 
+
 const args = process.argv.slice(2)
 const path = require('path')
 const fs = require('fs')
@@ -17,6 +17,7 @@ fs.readdir(csvPath, (err, files) => {
 
   const filteredFiles = files.filter(file => file.indexOf(targetTitle) > - 1)
 
+  if (filteredFiles.length === 0) return console.error(`This title doesn't exist in this directory.`)
   let counter = filteredFiles.length
   let completeJSON = []
 
@@ -31,9 +32,9 @@ fs.readdir(csvPath, (err, files) => {
     .then(data => {
       counter--
       if (counter === 0) {
-        fs.writeFile(`${targetTitle}-clean.json`, JSON.stringify(completeJSON), 'utf8', (err) => {
+        fs.writeFile(`${targetTitle}-geodata-raw.js`, `module.exports.geodata = ${JSON.stringify(completeJSON)}`, 'utf8', (err) => {
           if (err) throw err
-          console.log('Successfully joined data')
+          console.log('Successfully generated csv')
         })
       }
     })

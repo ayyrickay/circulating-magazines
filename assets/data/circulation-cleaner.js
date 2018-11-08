@@ -9,8 +9,12 @@
 //     # All other fields can be combined
 //
 //     # Object destructuring would be helpful here, but maybe possible in python?
+
+const args = process.argv.slice(2)
+const path = require('path')
+const circulationdataPath = path.join(__dirname, args[0])
 const fs = require('fs')
-const circulationData = require('./rawData/saev-circulation')
+const circulationData = require(circulationdataPath)
 
 const getDecade = (date) => {
   const year = date.getFullYear()
@@ -41,7 +45,7 @@ console.log(circulationData.circulationData[0])
 console.log(cleanCirculation[0])
 console.log('final length of array is', cleanCirculation.length)
 
-fs.writeFile('saev-circulation-clean.json', JSON.stringify(cleanCirculation), 'utf8', (err) => {
+fs.writeFile(`${args[0].split('-')[0].toLowerCase()}-circulation.json`, JSON.stringify(cleanCirculation), 'utf8', (err) => {
   if (err) throw err
   console.log('Successfully joined data')
 })

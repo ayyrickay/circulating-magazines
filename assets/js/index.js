@@ -1,5 +1,5 @@
 const numberFormat = d3.format(".2f")
-const sources = ["./assets/data/saev-geodata-clean.json", "./assets/data/saev-circulation-clean.json"];
+const titleSelector = document.getElementById('title-select')
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
 let us1ChartRenderOption = 'rawData'
 // const us2Chart = dc.geoChoroplethChart("#us2-chart")
@@ -137,7 +137,7 @@ window.onresize = (event) => {
 }
 
 const getTopValue = (group) => d3.max(group.all(), d => {
-  console.log(d.value.sampled_total_sales)
+  // console.log(d.value.sampled_total_sales)
   return d.value.sampled_total_sales
 })
 
@@ -165,18 +165,11 @@ const lineTip = d3.tip()
     `
   })
 
-// const industryChart = dc.bubbleChart("#industry-chart")
-// const roundChart = dc.bubbleChart("#round-chart")
+const renderCharts = (data) => {
+  console.log(data[0][0])
+  const title1GeoData = data[0].filter(data => stateCodes[data.state_region])
 
-Promise.all(sources.map(url => d3.json(url)))
-.then((data) => {
-  const title1GeoData = data[0].filter(data => {
-    return data.magazine_title === "Saturday Evening Post" && stateCodes[data.state_region]
-  })
-
-  const title1Circulation = data[1].filter(data => {
-    return data.magazine_title === "Saturday Evening Post"
-  })
+  const title1Circulation = data[1]
 
   title1Circulation.forEach(d => {
     d.actual_issue_date = new Date(d.actual_issue_date)
@@ -211,7 +204,6 @@ Promise.all(sources.map(url => d3.json(url)))
   })
 )
 
-console.log(salesByState.all())
   const totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
   const salesByStateOverPop = stateRegion.group().reduceSum(d => d.sampled_total_sales / d.state_population ) // TODO: Replace 100 with a STATE_POPULATION variable
@@ -306,8 +298,7 @@ console.log(salesByState.all())
                   .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
                 )
                 .valueAccessor(kv => {
-                  // console.log(kv.value)
-                  if(kv.value !== undefined) return kv.value
+                  if(kv.value !== undefined) return kv.value.sampled_total_sales
                 })
                 .renderTitle(false)
                 .on('pretransition', (chart) => {
@@ -383,4 +374,14 @@ console.log(salesByState.all())
 
         dc.renderAll()
     })
-})
+}
+
+const generateCharts = () => {
+  console.log('generating charts for', titleSelector.value)
+  Promise.all([`./assets/data/${titleSelector.value}-geodata.json`, `./assets/data/${titleSelector.value}-circulation.json`].map(url => d3.json(url)))
+  .then(renderCharts)
+}
+
+titleSelector.onchange = generateCharts
+
+generateCharts()
