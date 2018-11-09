@@ -112,6 +112,7 @@ const generateScale = (chartGroup) =>  {
   if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
+    console.log([0, getTopValue(chartGroup)])
     return [0, getTopValue(chartGroup)]
   }
 }
@@ -137,7 +138,7 @@ const getTopValue = (group) => d3.max(group.all(), d => {
 const lineTip = d3.tip()
   .attr('class', 'tooltip')
   .offset([-10, 0])
-  .html(({data: {key, value: {issue_circulation, price, type, publishing_company}}}) => {
+  .html(({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) => {
     return `
     <div class="tooltip-data">
       <h4 class="key">Date</h4>
@@ -149,11 +150,15 @@ const lineTip = d3.tip()
     </div>
     <div class="tooltip-data">
       <h4 class="key">Price</h4>
-      <p>${price}</p>
+      <p>${price ? price : 'Unknown'}</p>
     </div>
     <div class="tooltip-data">
       <h4 class="key">Publishing Company</h4>
       <p>${publishing_company ? publishing_company : 'Unkown'}</p>
+    </div>
+    <div class="tooltip-data">
+      <h4 class="key">Editor</h4>
+      <p>${editor ? editor : 'Unkown'}</p>
     </div>
     `
   })
@@ -318,6 +323,7 @@ const renderCharts = (data) => {
           .renderTitle(false)
           .on('renderlet', (chart) => {
             chart.selectAll('circle').on('mouseover', (selected) => {
+              console.log('Before', salesByState.all()[0].value.sampled_total_sales)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
