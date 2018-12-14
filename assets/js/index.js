@@ -373,9 +373,12 @@ const renderCharts = (data) => {
                         .on('mouseover.mapTip', mapTip.show)
                         .on('mouseout.mapTip', mapTip.hide);
                 })
+                .on('filtered', (chart, filter) => {
+                  console.log(chart.filters())
+                  console.log(filter)
+                })
 
         lineChart1.unClick = () => {
-          // Doesn't seem to be filtering aggressively enough (some sort of edge case)
           samplePeriodEnd.filter(null)
           state.isClicked = false
 
@@ -412,13 +415,37 @@ const renderCharts = (data) => {
           .valueAccessor(d => d.value.issue_circulation)
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
           .renderTitle(false)
-          .on('renderlet.mouseover', (chart) => {
-            chart.selectAll('circle').on('mouseover.hover', (selected) => {
-              console.log('filters before mouseover:', us1Chart.filters())
+          .on('renderlet.click', (chart) => {
+            chart.selectAll('circle').on('click', (selected) => {
+              // Doesn't seem to be filtering aggressively enough (some sort of edge case)
+              document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
+              lineTip.show(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
-                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
+                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
+                currentIssueDate >= periodStart && currentIssueDate <= periodEnding ? console.log(`issue ${selected.x} appeared between ${periodStart} and ${periodEnding}`) : null
+                return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+              })
+              state.isClicked = true
+              // console.log(us1Chart.filters())
+              console.log(returnGroup().all())
+              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.redraw()
+              // squishy logic - need to see if there's a way to
+              chart.selectAll('circle').on('mouseleave', null)
+                .on('mouseover.lineTip', null)
+                .on('mouseout.lineTip', null)
+                .on('mouseover.hover', null)
+                .on('mouseleave.hover', null)
+            })
+          })
+          .on('renderlet.mouseover', (chart) => {
+            chart.selectAll('circle').on('mouseover.hover', (selected) => {
+              samplePeriodEnd.filter(d => {
+                const currentIssueDate = new Date(selected.x)
+                const periodEnding = new Date(d)
+                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
 
@@ -431,33 +458,7 @@ const renderCharts = (data) => {
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
             })
-            console.log('filters after mouseleave:', us1Chart.filters())
 
-          })
-          .on('renderlet.click', (chart) => {
-            chart.selectAll('circle').on('click', (selected) => {
-              // Doesn't seem to be filtering aggressively enough (some sort of edge case)
-              document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
-              console.log('filters before click:', us1Chart.filters())
-              samplePeriodEnd.filter(d => {
-                const currentIssueDate = new Date(selected.x)
-                const periodEnding = new Date(d)
-                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
-                return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
-              })
-              state.isClicked = true
-              console.log('filters after click:',us1Chart.filters())
-
-              lineTip.show(selected)
-              us1Chart.colorDomain(generateScale(returnGroup()))
-              us1Chart.redraw()
-              // squishy logic - need to see if there's a way to
-              chart.selectAll('circle').on('mouseleave', null)
-                .on('mouseover.lineTip', null)
-                .on('mouseout.lineTip', null)
-                .on('mouseover.hover', null)
-                .on('mouseout.hover', null)
-            })
           })
           .on('pretransition', (chart) => {
               chart.selectAll('circle')
