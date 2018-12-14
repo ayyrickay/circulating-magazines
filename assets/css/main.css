@@ -205,3 +205,15 @@ body {
 .tooltip p {
   font-size: .85em;
 }
+
+#clearIssueFilterButton {
+	background-color: #e4e4e4;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 14px;
+  text-align: center;
+  text-shadow: none;
+  padding: 6px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  transition: all 0.1s ease-in-out;
+	visibility: hidden;
+}

@@ -24,7 +24,7 @@ const getDecade = (date) => {
 }
 
 const cleanCirculation = circulationData.circulationData.map(match => {
-  return ({
+  return {
         actual_issue_date: new Date(match.year, match.month-1, `${match.day || 1}`),
         issue_circulation: match._circulation,
         price: match._price,
@@ -37,7 +37,7 @@ const cleanCirculation = circulationData.circulationData.map(match => {
         circulation_for_db: match.circulation_for_db,
         price_for_db: match.price_for_db,
         magazine_title: match.magazine
-      })
+      }
 }
   )
 

@@ -9,6 +9,9 @@ const us1Width = document.getElementById('us1-chart').offsetWidth
 const us1Height = document.getElementById('us1-chart').offsetHeight
 const lineChart1Width = document.getElementById('line-chart-1').offsetWidth
 const lineChart1Height = document.getElementById('line-chart-1').offsetHeight
+const state = {
+  isClicked: false
+}
 
 const getWidth = (element) => {
   if (document.getElementById(element)) {
@@ -112,7 +115,6 @@ const generateScale = (chartGroup) =>  {
   if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
-    console.log([0, getTopValue(chartGroup)])
     return [0, getTopValue(chartGroup)]
   }
 }
@@ -135,37 +137,9 @@ const getTopValue = (group) => d3.max(group.all(), d => {
   return d.value.sampled_total_sales
 })
 
-const lineTip = d3.tip()
-  .attr('class', 'tooltip')
-  .offset([-10, 0])
-  .html(({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) => {
-    return `
-    <div class="tooltip-data">
-      <h4 class="key">Date</h4>
-      <p>${key.format('mmm dd, yyyy')}</p>
-    </div>
-    <div class="tooltip-data">
-      <h4 class="key">Circulation</h4>
-      <p> ${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
-    </div>
-    <div class="tooltip-data">
-      <h4 class="key">Price</h4>
-      <p>${price ? price : 'Unknown'}</p>
-    </div>
-    <div class="tooltip-data">
-      <h4 class="key">Publishing Company</h4>
-      <p>${publishing_company ? publishing_company : 'Unkown'}</p>
-    </div>
-    <div class="tooltip-data">
-      <h4 class="key">Editor</h4>
-      <p>${editor ? editor : 'Unkown'}</p>
-    </div>
-    `
-  })
-
 const renderCharts = (data) => {
   const title1GeoData = data[0].filter(data => {
-    if (!data) return false
+    if (!data) {return false}
     return stateCodes[data.state_region]
   })
 
@@ -178,12 +152,13 @@ const renderCharts = (data) => {
   const geodata = crossfilter(title1GeoData)
   const circulation = crossfilter(title1Circulation)
 
-  // Reducer function for geodata
+  // Reducer function for raw geodata
   const geoReducerAdd = (p, v) => {
     ++p.count
     p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
     p.sampled_single_copy_sales += v.sampled_single_copy_sales
     p.sampled_total_sales += v.sampled_total_sales
+    p.state_population = v.state_population // only valid for population viz
     return p
   }
   const geoReducerRemove = (p, v) => {
@@ -191,14 +166,53 @@ const renderCharts = (data) => {
     p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
     p.sampled_single_copy_sales -= v.sampled_single_copy_sales
     p.sampled_total_sales -= v.sampled_total_sales
+    p.state_population = v.state_population // only valid for population viz
     return p
   }
 
+  // Reducer function for population Reducer
+  const popReducerAdd = (p, v) => {
+    ++p.count
+    p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
+    p.sampled_single_copy_sales += v.sampled_single_copy_sales
+    p.sampled_total_sales += v.sampled_total_sales / v.state_population
+    p.state_population = v.state_population // only valid for population viz
+    return p
+  }
+  const popReducerRemove = (p, v) => {
+    --p.count
+    p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
+    p.sampled_single_copy_sales -= v.sampled_single_copy_sales
+    p.sampled_total_sales -= v.sampled_total_sales / v.state_population
+    p.state_population = v.state_population // only valid for population viz
+    return p
+  }
+
+  // Reducer function for total reducer (in a weird place because hoisting?)
+  const totalReducerAdd = (p, v) => {
+    ++p.count
+    p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
+    p.sampled_single_copy_sales += v.sampled_single_copy_sales
+    p.sampled_total_sales += v.sampled_total_sales / totalSalesByState.value.sampled_total_sales
+    p.state_population = v.state_population // only valid for population viz
+    return p
+  }
+  const totalReducerRemove = (p, v) => {
+    --p.count
+    p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
+    p.sampled_single_copy_sales -= v.sampled_single_copy_sales
+    p.sampled_total_sales -= v.sampled_total_sales / totalSalesByState.value.sampled_total_sales
+    p.state_population = v.state_population // only valid for population viz
+    return p
+  }
+
+  // generic georeducer
   const geoReducerDefault = () => ({
     count: 0,
     sampled_mail_subscriptions: 0,
     sampled_single_copy_sales: 0,
     sampled_total_sales: 0,
+    state_population: 0
   })
 
   // Generate dimensions and groups for choropleth
@@ -208,8 +222,8 @@ const renderCharts = (data) => {
 
   const totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
-  const salesByStateOverPop = stateRegion.group().reduceSum(d => d.sampled_total_sales / d.state_population ) // TODO: Replace 100 with a STATE_POPULATION variable
-  const salesByStateOverTotal = stateRegion.group().reduceSum(d => d.sampled_total_sales / totalSalesByState.value.sampled_total_sales) // percentage
+  const salesByStateOverPop = stateRegion.group().reduce(popReducerAdd, popReducerRemove, geoReducerDefault) // TODO: Replace 100 with a STATE_POPULATION variable
+  const salesByStateOverTotal = stateRegion.group().reduce(totalReducerAdd, totalReducerRemove, geoReducerDefault) // percentage
 
   // generate dimensions and groups for line/range chart
   const title1Dates = circulation.dimension(d => d.actual_issue_date)
@@ -258,27 +272,80 @@ const renderCharts = (data) => {
     }
   }
 
+  const generateMapTipText = (sampled_total_sales) => {
+    if (us1ChartRenderOption === 'percentOfPopulation') {
+      return `${sampled_total_sales.toFixed(3)} issues per person`
+    } else if (us1ChartRenderOption === 'percentOfTotal') {
+      return `${sampled_total_sales.toFixed(3)} of total circulation`
+    } else {
+      return `${sampled_total_sales.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues`
+    }
+  }
+
   const mapTip = d3.tip()
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      const selectedState = returnGroup().all().filter(item => item.key === d.properties.name)[0]
+      const {key, value: {sampled_total_sales}} = returnGroup().all().filter(item => item.key === d.properties.name)[0]
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
-        <p>${selectedState.key}</p>
+        <p>${key}</p>
       </div>
       <div class="tooltip-data">
         <h4 class="key">Circulation</h4>
-        <p> ${selectedState.value.sampled_total_sales.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+        <p> ${generateMapTipText(sampled_total_sales)}</p>
       </div>
       `
     })
 
+    const lineTip = d3.tip()
+      .attr('class', 'tooltip')
+      .offset([-10, 0])
+      .html(({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) => {
+        // console.log(salesByState.all()[0].value.sampled_total_sales)
+        return `
+        <div class="tooltip-data">
+          <h4 class="key">Date</h4>
+          <p>${key.format('mmm dd, yyyy')}</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">Circulation</h4>
+          <p> ${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">Price</h4>
+          <p>${price ? price : 'Unknown'}</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">Publishing Company</h4>
+          <p>${publishing_company ? publishing_company : 'Unkown'}</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">Editor</h4>
+          <p>${editor ? editor : 'Unkown'}</p>
+        </div>
+        `
+      })
+
+    const filterChoroplethByIssue = (selected) => {
+      samplePeriodEnd.filter(d => {
+        const currentIssueDate = new Date(selected.x)
+        const periodEnding = new Date(d)
+        const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
+        return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+      })
+
+      us1Chart.colorDomain(generateScale(returnGroup()))
+      us1Chart.redraw()
+    }
+
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
+          // console.log(returnGroup().all())
           us1Chart.colorDomain(generateScale(returnGroup()))
           us1Chart.group(returnGroup())
+          us1Chart.redraw()
         }
         us1Chart.width(us1Width)
                 .height(us1Height)
@@ -297,7 +364,7 @@ const renderCharts = (data) => {
                   .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
                 )
                 .valueAccessor(kv => {
-                  if(kv.value !== undefined) return kv.value.sampled_total_sales
+                  if (kv.value !== undefined) { return kv.value.sampled_total_sales }
                 })
                 .renderTitle(false)
                 .on('pretransition', (chart) => {
@@ -306,7 +373,34 @@ const renderCharts = (data) => {
                         .on('mouseover.mapTip', mapTip.show)
                         .on('mouseout.mapTip', mapTip.hide);
                 })
+                .on('filtered', (chart, filter) => {
+                  console.log(chart.filters())
+                  console.log(filter)
+                })
 
+        lineChart1.unClick = () => {
+          samplePeriodEnd.filter(null)
+          state.isClicked = false
+
+          lineTip.hide()
+          lineChart1.on('pretransition', (chart) => {
+              chart.selectAll('circle')
+                  .call(lineTip)
+                  .on('mouseover.lineTip', lineTip.show)
+                  .on('mouseout.lineTip', lineTip.hide)
+          })
+          .on('renderlet.mouseover', (chart) => {
+            chart.selectAll('circle').on('mouseover.hover', filterChoroplethByIssue)
+
+            chart.selectAll('circle').on('mouseleave.hover', (selected) => {
+              samplePeriodEnd.filter(null)
+              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.redraw()
+            })
+          })
+          us1Chart.colorDomain(generateScale(returnGroup()))
+          us1Chart.redraw()
+        }
         lineChart1
           .width(lineChart1Width-50)
           .height(lineChart1Height-50)
@@ -321,13 +415,37 @@ const renderCharts = (data) => {
           .valueAccessor(d => d.value.issue_circulation)
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
           .renderTitle(false)
-          .on('renderlet', (chart) => {
-            chart.selectAll('circle').on('mouseover', (selected) => {
-              console.log('Before', salesByState.all()[0].value.sampled_total_sales)
+          .on('renderlet.click', (chart) => {
+            chart.selectAll('circle').on('click', (selected) => {
+              // Doesn't seem to be filtering aggressively enough (some sort of edge case)
+              document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
+              lineTip.show(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
-                const periodStart = new Date(new Date(periodEnding).setMonth(periodEnding.getMonth() - 6))
+                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
+                currentIssueDate >= periodStart && currentIssueDate <= periodEnding ? console.log(`issue ${selected.x} appeared between ${periodStart} and ${periodEnding}`) : null
+                return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+              })
+              state.isClicked = true
+              // console.log(us1Chart.filters())
+              console.log(returnGroup().all())
+              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.redraw()
+              // squishy logic - need to see if there's a way to
+              chart.selectAll('circle').on('mouseleave', null)
+                .on('mouseover.lineTip', null)
+                .on('mouseout.lineTip', null)
+                .on('mouseover.hover', null)
+                .on('mouseleave.hover', null)
+            })
+          })
+          .on('renderlet.mouseover', (chart) => {
+            chart.selectAll('circle').on('mouseover.hover', (selected) => {
+              samplePeriodEnd.filter(d => {
+                const currentIssueDate = new Date(selected.x)
+                const periodEnding = new Date(d)
+                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
 
@@ -335,11 +453,12 @@ const renderCharts = (data) => {
               us1Chart.redraw()
             })
 
-            chart.selectAll('circle').on('mouseleave', (selected) => {
+            chart.selectAll('circle').on('mouseleave.hover', (selected) => {
               samplePeriodEnd.filter(null)
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
             })
+
           })
           .on('pretransition', (chart) => {
               chart.selectAll('circle')

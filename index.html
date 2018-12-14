@@ -30,38 +30,7 @@
 
     <div class="chart-group-1">
       <h3 id="magazine-title-1"></h3>
-      <form>
-        <div class="switch-field">
-          <input
-            type="radio"
-            id="renderOption1"
-            name="chart-group-1"
-            value="rawData"
-            onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.customUpdate();dc.redrawAll();"
-            checked />
-          <label for="renderOption1">Raw Data</label>
-
-          <input type="radio" id="renderOption2"
-           name="chart-group-1" value="percentOfPopulation"
-           onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.customUpdate();dc.redrawAll();"
-           />
-          <label for="renderOption2">% of Population</label>
-
-          <input type="radio" id="renderOption3"
-           name="chart-group-1" value="percentOfTotal"
-           onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.customUpdate();dc.redrawAll();"
-           />
-          <label for="renderOption3">% of Total</label>
-        </div>
-      </form>
       <div class="charts">
-        <div id="us1-chart">
-            <h3 class="chart-title">Circulation By State (color: total sold)</h3>
-            <a class="reset" href="javascript:us1Chart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
-            <div class="clearfix"></div>
-            <p class="reset" style="display: none;">Current filter: <span class="filter"></span></p>
-        </div>
-
         <div class="line-chart-container">
           <div id="line-chart-1">
               <h3 class="chart-title">By Circulation</h3>
@@ -70,6 +39,41 @@
               <div class="clearfix"></div>
           </div>
           <div id="line-chart-1-range"></div>
+        </div>
+        <div id="us1-chart">
+          <form>
+            <div class="switch-field">
+              <input
+                type="radio"
+                id="renderOption1"
+                name="chart-group-1"
+                value="rawData"
+                onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.customUpdate();dc.redrawAll();"
+                checked />
+              <label for="renderOption1">Raw Data</label>
+
+              <input type="radio" id="renderOption2"
+               name="chart-group-1" value="percentOfPopulation"
+               onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.customUpdate();dc.redrawAll();"
+               />
+              <label for="renderOption2">% of Population</label>
+
+              <input type="radio" id="renderOption3"
+               name="chart-group-1" value="percentOfTotal"
+               onChange="javascript:us1ChartRenderOption=event.target.value;us1Chart.customUpdate();dc.redrawAll();"
+               />
+              <label for="renderOption3">% of Total</label>
+              <button id="clearIssueFilterButton"
+                value="Clear Issue"
+                onClick="javascript:lineChart1.unClick()"
+               >Clear Issue </button>
+              <!-- <label for="clearIssueFilterButton" id="clearIssueLabel">Clear Issue</label> -->
+            </div>
+          </form>
+            <h3 class="chart-title">Circulation By State (color: total sold)</h3>
+            <a class="reset" href="javascript:us1Chart.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+            <div class="clearfix"></div>
+            <p class="reset" style="display: none;">Current filter: <span class="filter"></span></p>
         </div>
       </div>
     </div>
