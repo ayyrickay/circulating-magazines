@@ -9,6 +9,9 @@ const us1Width = document.getElementById('us1-chart').offsetWidth
 const us1Height = document.getElementById('us1-chart').offsetHeight
 const lineChart1Width = document.getElementById('line-chart-1').offsetWidth
 const lineChart1Height = document.getElementById('line-chart-1').offsetHeight
+const state = {
+  flagClicked: false
+}
 
 const getWidth = (element) => {
   if (document.getElementById(element)) {
@@ -112,7 +115,6 @@ const generateScale = (chartGroup) =>  {
   if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
-    console.log([0, getTopValue(chartGroup)])
     return [0, getTopValue(chartGroup)]
   }
 }
@@ -135,37 +137,9 @@ const getTopValue = (group) => d3.max(group.all(), d => {
   return d.value.sampled_total_sales
 })
 
-const lineTip = d3.tip()
-  .attr('class', 'tooltip')
-  .offset([-10, 0])
-  .html(({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) => {
-    return `
-    <div class="tooltip-data">
-      <h4 class="key">Date</h4>
-      <p>${key.format('mmm dd, yyyy')}</p>
-    </div>
-    <div class="tooltip-data">
-      <h4 class="key">Circulation</h4>
-      <p> ${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
-    </div>
-    <div class="tooltip-data">
-      <h4 class="key">Price</h4>
-      <p>${price ? price : 'Unknown'}</p>
-    </div>
-    <div class="tooltip-data">
-      <h4 class="key">Publishing Company</h4>
-      <p>${publishing_company ? publishing_company : 'Unkown'}</p>
-    </div>
-    <div class="tooltip-data">
-      <h4 class="key">Editor</h4>
-      <p>${editor ? editor : 'Unkown'}</p>
-    </div>
-    `
-  })
-
 const renderCharts = (data) => {
   const title1GeoData = data[0].filter(data => {
-    if (!data) return false
+    if (!data) {return false}
     return stateCodes[data.state_region]
   })
 
@@ -198,7 +172,7 @@ const renderCharts = (data) => {
     count: 0,
     sampled_mail_subscriptions: 0,
     sampled_single_copy_sales: 0,
-    sampled_total_sales: 0,
+    sampled_total_sales: 0
   })
 
   // Generate dimensions and groups for choropleth
@@ -275,6 +249,42 @@ const renderCharts = (data) => {
       `
     })
 
+    const lineTip = d3.tip()
+      .attr('class', 'tooltip')
+      .offset([-10, 0])
+      .html(({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) => {
+        // console.log(salesByState.all()[0].value.sampled_total_sales)
+        return `
+        <div class="tooltip-data">
+          <h4 class="key">Date</h4>
+          <p>${key.format('mmm dd, yyyy')}</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">Circulation</h4>
+          <p> ${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">Price</h4>
+          <p>${price ? price : 'Unknown'}</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">Publishing Company</h4>
+          <p>${publishing_company ? publishing_company : 'Unkown'}</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">Editor</h4>
+          <p>${editor ? editor : 'Unkown'}</p>
+        </div>
+        `
+      })
+
+    const filterChoroplethByIssue = (data) => {
+      const currentIssueDate = new Date(selected.x)
+      const periodEnding = new Date(d)
+      const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
+      return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+    }
+
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
           us1Chart.colorDomain(generateScale(returnGroup()))
@@ -297,7 +307,7 @@ const renderCharts = (data) => {
                   .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
                 )
                 .valueAccessor(kv => {
-                  if(kv.value !== undefined) return kv.value.sampled_total_sales
+                  if (kv.value !== undefined) { return kv.value.sampled_total_sales }
                 })
                 .renderTitle(false)
                 .on('pretransition', (chart) => {
@@ -321,13 +331,12 @@ const renderCharts = (data) => {
           .valueAccessor(d => d.value.issue_circulation)
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
           .renderTitle(false)
-          .on('renderlet', (chart) => {
-            chart.selectAll('circle').on('mouseover', (selected) => {
-              console.log('Before', salesByState.all()[0].value.sampled_total_sales)
+          .on('renderlet.mouseover', (chart) => {
+            chart.selectAll('circle').on('mouseover.hover', (selected) => {
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
-                const periodStart = new Date(new Date(periodEnding).setMonth(periodEnding.getMonth() - 6))
+                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
 
@@ -335,10 +344,32 @@ const renderCharts = (data) => {
               us1Chart.redraw()
             })
 
-            chart.selectAll('circle').on('mouseleave', (selected) => {
+            chart.selectAll('circle').on('mouseleave.hover', (selected) => {
               samplePeriodEnd.filter(null)
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
+            })
+          })
+          .on('renderlet.click', (chart) => {
+            chart.selectAll('circle').on('click', (selected) => {
+              // Doesn't seem to be filtering aggressively enough (some sort of edge case)
+              samplePeriodEnd.filter(d => {
+                const currentIssueDate = new Date(selected.x)
+                const periodEnding = new Date(d)
+                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
+                return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+              })
+              state.flagClicked = true
+
+              lineTip.show(selected)
+              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.redraw()
+              // squishy logic - need to see if there's a way to
+              chart.selectAll('circle').on('mouseleave', null)
+                .on('mouseover.lineTip', null)
+                .on('mouseout.lineTip', null)
+                .on('mouseover.hover', null)
+                .on('mouseout.hover', null)
             })
           })
           .on('pretransition', (chart) => {
