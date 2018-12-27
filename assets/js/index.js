@@ -104,15 +104,13 @@ const colorScales = {
 const transformValue = (data, statePopulation, total) => {
   if (us1ChartRenderOption === 'percentOfPopulation') {
     return data / statePopulation
-  } else if (us1ChartRenderOption === 'percentOfTotal') {
-    return data / total * 100
   } else {
     return data
   }
 }
 
 const generateScale = (chartGroup) =>  {
-  if (us1ChartRenderOption === 'percentOfTotal' || us1ChartRenderOption === 'percentOfPopulation') {
+  if (us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
     return [0, getTopValue(chartGroup)]
@@ -188,24 +186,6 @@ const renderCharts = (data) => {
     return p
   }
 
-  // Reducer function for total reducer (in a weird place because hoisting?)
-  const totalReducerAdd = (p, v) => {
-    ++p.count
-    p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
-    p.sampled_single_copy_sales += v.sampled_single_copy_sales
-    p.sampled_total_sales += v.sampled_total_sales / totalSalesByState.value.sampled_total_sales
-    p.state_population = v.state_population // only valid for population viz
-    return p
-  }
-  const totalReducerRemove = (p, v) => {
-    --p.count
-    p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
-    p.sampled_single_copy_sales -= v.sampled_single_copy_sales
-    p.sampled_total_sales -= v.sampled_total_sales / totalSalesByState.value.sampled_total_sales
-    p.state_population = v.state_population // only valid for population viz
-    return p
-  }
-
   // generic georeducer
   const geoReducerDefault = () => ({
     count: 0,
@@ -223,7 +203,6 @@ const renderCharts = (data) => {
   const totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
   const salesByStateOverPop = stateRegion.group().reduce(popReducerAdd, popReducerRemove, geoReducerDefault) // TODO: Replace 100 with a STATE_POPULATION variable
-  const salesByStateOverTotal = stateRegion.group().reduce(totalReducerAdd, totalReducerRemove, geoReducerDefault) // percentage
 
   // generate dimensions and groups for line/range chart
   const title1Dates = circulation.dimension(d => d.actual_issue_date)
@@ -265,8 +244,6 @@ const renderCharts = (data) => {
   const returnGroup = () => {
     if (us1ChartRenderOption === 'percentOfPopulation') {
       return salesByStateOverPop
-    } else if (us1ChartRenderOption === 'percentOfTotal') {
-      return salesByStateOverTotal
     } else {
       return salesByState
     }
@@ -275,8 +252,6 @@ const renderCharts = (data) => {
   const generateMapTipText = (sampled_total_sales) => {
     if (us1ChartRenderOption === 'percentOfPopulation') {
       return `${sampled_total_sales.toFixed(3)} issues per person`
-    } else if (us1ChartRenderOption === 'percentOfTotal') {
-      return `${sampled_total_sales.toFixed(3)} of total circulation`
     } else {
       return `${sampled_total_sales.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues`
     }
