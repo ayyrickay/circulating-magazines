@@ -10,7 +10,18 @@ const us1Height = document.getElementById('us1-chart').offsetHeight
 const lineChart1Width = document.getElementById('line-chart-1').offsetWidth
 const lineChart1Height = document.getElementById('line-chart-1').offsetHeight
 const state = {
-  isClicked: false
+  isClicked: false,
+  us1ChartRenderOption: 'rawData'
+}
+
+const changeRenderOption = (event) => {
+  if (state.isClicked) {
+    state.us1ChartRenderOption = event.target.value
+    us1Chart.customUpdate()
+    dc.redrawAll()
+  } else {
+    console.log('plz select a specific issue')
+  }
 }
 
 const getWidth = (element) => {
@@ -249,11 +260,15 @@ const renderCharts = (data) => {
     }
   }
 
+  const renderNumberWithCommas = (number) => {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  }
+
   const generateMapTipText = (sampled_total_sales) => {
     if (us1ChartRenderOption === 'percentOfPopulation') {
       return `${sampled_total_sales.toFixed(3)} issues per person`
     } else {
-      return `${sampled_total_sales.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues`
+      return `${renderNumberWithCommas(sampled_total_sales)} issues`
     }
   }
 
@@ -261,16 +276,36 @@ const renderCharts = (data) => {
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      const {key, value: {sampled_total_sales}} = returnGroup().all().filter(item => item.key === d.properties.name)[0]
+      console.log('full data is', returnGroup().all().filter(item => item.key === d.properties.name)[0])
+      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales}} = returnGroup().all().filter(item => item.key === d.properties.name)[0]
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
         <p>${key}</p>
       </div>
-      <div class="tooltip-data">
-        <h4 class="key">Circulation</h4>
-        <p> ${generateMapTipText(sampled_total_sales)}</p>
-      </div>
+      ${state.isClicked ?
+        `${sampled_mail_subscriptions > 0 ?
+          `<div class="tooltip-data">
+            <h4 class="key">Mail Subscriptions</h4>
+            <p> ${renderNumberWithCommas(sampled_mail_subscriptions)}</p>
+          </div>`
+        : ''}
+        ${sampled_single_copy_sales > 0 ?
+          `<div class="tooltip-data">
+            <h4 class="key">Single Copy Sales</h4>
+            <p> ${renderNumberWithCommas(sampled_single_copy_sales)}</p>
+          </div>`
+        : ''}
+        <div class="tooltip-data">
+          <h4 class="key">Total Circulation</h4>
+          <p> ${generateMapTipText(sampled_total_sales)}</p>
+        </div>`
+        : `
+          <div class="tooltip-data">
+            <h4 class="key">Data</h4>
+            <p> Please select a specific issue for more detailed data</p>
+          </div>
+        `}
       `
     })
 
@@ -304,15 +339,16 @@ const renderCharts = (data) => {
       })
 
     const filterChoroplethByIssue = (selected) => {
-      samplePeriodEnd.filter(d => {
-        const currentIssueDate = new Date(selected.x)
-        const periodEnding = new Date(d)
-        const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
-        return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
-      })
+      if (!state.isClicked) {
+        samplePeriodEnd.filter(d => {
+          const currentIssueDate = new Date(selected.x)
+          const periodEnding = new Date(d)
+          const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
+          return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+        })
 
-      // us1Chart.colorDomain(generateScale(returnGroup()))
-      us1Chart.redraw()
+        us1Chart.redraw()
+      }
     }
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
