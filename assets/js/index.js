@@ -336,14 +336,12 @@ const renderCharts = (data) => {
         return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
       })
 
-      us1Chart.colorDomain(generateScale(returnGroup()))
+      // us1Chart.colorDomain(generateScale(returnGroup()))
       us1Chart.redraw()
     }
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
-          // console.log(returnGroup().all())
-          us1Chart.colorDomain(generateScale(returnGroup()))
           us1Chart.group(returnGroup())
           us1Chart.redraw()
         }
@@ -377,6 +375,12 @@ const renderCharts = (data) => {
                   console.log(chart.filters())
                   console.log(filter)
                 })
+                .on("preRender", (chart) => {
+                  chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
+                })
+                .on("preRedraw", (chart) => {
+                  chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
+                });
 
         lineChart1.unClick = () => {
           samplePeriodEnd.filter(null)
