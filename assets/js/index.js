@@ -11,6 +11,8 @@ const lineChart1Width = document.getElementById('line-chart-1').offsetWidth
 const lineChart1Height = document.getElementById('line-chart-1').offsetHeight
 const state = {
   isClicked: false,
+  selectedMagazine: 'saev',
+  totalSalesByState: null,
   us1ChartRenderOption: 'rawData'
 }
 
@@ -211,7 +213,9 @@ const renderCharts = (data) => {
   const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
   const salesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
 
-  const totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+  state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+  console.log('total sales is', state.totalSalesByState)
+
 
   const salesByStateOverPop = stateRegion.group().reduce(popReducerAdd, popReducerRemove, geoReducerDefault) // TODO: Replace 100 with a STATE_POPULATION variable
 
@@ -277,29 +281,38 @@ const renderCharts = (data) => {
     .offset([-10, 0])
     .html((d) => {
       console.log('full data is', returnGroup().all().filter(item => item.key === d.properties.name)[0])
-      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales}} = returnGroup().all().filter(item => item.key === d.properties.name)[0]
+      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = returnGroup().all().filter(item => item.key === d.properties.name)[0]
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
         <p>${key}</p>
       </div>
       ${state.isClicked ?
-        `${sampled_mail_subscriptions > 0 ?
+        `${sampled_mail_subscriptions ?
           `<div class="tooltip-data">
             <h4 class="key">Mail Subscriptions</h4>
             <p> ${renderNumberWithCommas(sampled_mail_subscriptions)}</p>
           </div>`
         : ''}
-        ${sampled_single_copy_sales > 0 ?
+        ${sampled_single_copy_sales ?
           `<div class="tooltip-data">
             <h4 class="key">Single Copy Sales</h4>
             <p> ${renderNumberWithCommas(sampled_single_copy_sales)}</p>
           </div>`
         : ''}
         <div class="tooltip-data">
+          <h4 class="key">% of State Population</h4>
+          <p> ${(sampled_total_sales/state_population * 100).toFixed(3)}%</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">% of Total Circulation</h4>
+          <p> ${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%</p>
+        </div>
+        <div class="tooltip-data">
           <h4 class="key">Total Circulation</h4>
           <p> ${generateMapTipText(sampled_total_sales)}</p>
-        </div>`
+        </div>
+        `
         : `
           <div class="tooltip-data">
             <h4 class="key">Data</h4>
@@ -443,8 +456,10 @@ const renderCharts = (data) => {
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
               state.isClicked = true
+              state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+              // console.log('total sales is', state.totalSalesByState.value.sampled_total_sales)
               // console.log(us1Chart.filters())
-              console.log(returnGroup().all())
+              // console.log(returnGroup().all())
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
               // squishy logic - need to see if there's a way to
