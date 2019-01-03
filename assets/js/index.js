@@ -22,7 +22,7 @@ const changeRenderOption = (event) => {
     us1Chart.customUpdate()
     dc.redrawAll()
   } else {
-    console.log('plz select a specific issue')
+    console.log('Please select a specific issue')
   }
 }
 
@@ -214,8 +214,6 @@ const renderCharts = (data) => {
   const salesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
 
   state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-  console.log('total sales is', state.totalSalesByState)
-
 
   const salesByStateOverPop = stateRegion.group().reduce(popReducerAdd, popReducerRemove, geoReducerDefault) // TODO: Replace 100 with a STATE_POPULATION variable
 
@@ -280,7 +278,6 @@ const renderCharts = (data) => {
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      console.log('full data is', returnGroup().all().filter(item => item.key === d.properties.name)[0])
       const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = returnGroup().all().filter(item => item.key === d.properties.name)[0]
       return `
       <div class="tooltip-data">
@@ -326,7 +323,6 @@ const renderCharts = (data) => {
       .attr('class', 'tooltip')
       .offset([-10, 0])
       .html(({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) => {
-        // console.log(salesByState.all()[0].value.sampled_total_sales)
         return `
         <div class="tooltip-data">
           <h4 class="key">Date</h4>
@@ -396,8 +392,8 @@ const renderCharts = (data) => {
                         .on('mouseout.mapTip', mapTip.hide);
                 })
                 .on('filtered', (chart, filter) => {
-                  console.log(chart.filters())
-                  console.log(filter)
+                  // console.log(chart.filters())
+                  // console.log(filter)
                 })
                 .on("preRender", (chart) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
@@ -429,6 +425,7 @@ const renderCharts = (data) => {
           us1Chart.colorDomain(generateScale(returnGroup()))
           us1Chart.redraw()
         }
+
         lineChart1
           .width(lineChart1Width-50)
           .height(lineChart1Height-50)
@@ -445,24 +442,19 @@ const renderCharts = (data) => {
           .renderTitle(false)
           .on('renderlet.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
-              // Doesn't seem to be filtering aggressively enough (some sort of edge case)
               document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
               lineTip.show(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
                 const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
-                currentIssueDate >= periodStart && currentIssueDate <= periodEnding ? console.log(`issue ${selected.x} appeared between ${periodStart} and ${periodEnding}`) : null
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
               state.isClicked = true
               state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-              // console.log('total sales is', state.totalSalesByState.value.sampled_total_sales)
-              // console.log(us1Chart.filters())
-              // console.log(returnGroup().all())
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
-              // squishy logic - need to see if there's a way to
+              // squishy logic
               chart.selectAll('circle').on('mouseleave', null)
                 .on('mouseover.lineTip', null)
                 .on('mouseout.lineTip', null)
