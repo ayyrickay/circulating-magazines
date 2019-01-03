@@ -10,7 +10,20 @@ const us1Height = document.getElementById('us1-chart').offsetHeight
 const lineChart1Width = document.getElementById('line-chart-1').offsetWidth
 const lineChart1Height = document.getElementById('line-chart-1').offsetHeight
 const state = {
-  isClicked: false
+  isClicked: false,
+  selectedMagazine: 'saev',
+  totalSalesByState: null,
+  us1ChartRenderOption: 'rawData'
+}
+
+const changeRenderOption = (event) => {
+  if (state.isClicked) {
+    state.us1ChartRenderOption = event.target.value
+    us1Chart.customUpdate()
+    dc.redrawAll()
+  } else {
+    console.log('Please select a specific issue')
+  }
 }
 
 const getWidth = (element) => {
@@ -200,7 +213,7 @@ const renderCharts = (data) => {
   const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
   const salesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
 
-  const totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+  state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
   const salesByStateOverPop = stateRegion.group().reduce(popReducerAdd, popReducerRemove, geoReducerDefault) // TODO: Replace 100 with a STATE_POPULATION variable
 
@@ -249,11 +262,15 @@ const renderCharts = (data) => {
     }
   }
 
+  const renderNumberWithCommas = (number) => {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  }
+
   const generateMapTipText = (sampled_total_sales) => {
     if (us1ChartRenderOption === 'percentOfPopulation') {
       return `${sampled_total_sales.toFixed(3)} issues per person`
     } else {
-      return `${sampled_total_sales.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues`
+      return `${renderNumberWithCommas(sampled_total_sales)} issues`
     }
   }
 
@@ -261,16 +278,44 @@ const renderCharts = (data) => {
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      const {key, value: {sampled_total_sales}} = returnGroup().all().filter(item => item.key === d.properties.name)[0]
+      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = returnGroup().all().filter(item => item.key === d.properties.name)[0]
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
         <p>${key}</p>
       </div>
-      <div class="tooltip-data">
-        <h4 class="key">Circulation</h4>
-        <p> ${generateMapTipText(sampled_total_sales)}</p>
-      </div>
+      ${state.isClicked ?
+        `${sampled_mail_subscriptions ?
+          `<div class="tooltip-data">
+            <h4 class="key">Mail Subscriptions</h4>
+            <p> ${renderNumberWithCommas(sampled_mail_subscriptions)}</p>
+          </div>`
+        : ''}
+        ${sampled_single_copy_sales ?
+          `<div class="tooltip-data">
+            <h4 class="key">Single Copy Sales</h4>
+            <p> ${renderNumberWithCommas(sampled_single_copy_sales)}</p>
+          </div>`
+        : ''}
+        <div class="tooltip-data">
+          <h4 class="key">% of State Population</h4>
+          <p> ${(sampled_total_sales/state_population * 100).toFixed(3)}%</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">% of Total Circulation</h4>
+          <p> ${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%</p>
+        </div>
+        <div class="tooltip-data">
+          <h4 class="key">Total Circulation</h4>
+          <p> ${generateMapTipText(sampled_total_sales)}</p>
+        </div>
+        `
+        : `
+          <div class="tooltip-data">
+            <h4 class="key">Data</h4>
+            <p> Please select a specific issue for more detailed data</p>
+          </div>
+        `}
       `
     })
 
@@ -278,7 +323,6 @@ const renderCharts = (data) => {
       .attr('class', 'tooltip')
       .offset([-10, 0])
       .html(({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) => {
-        // console.log(salesByState.all()[0].value.sampled_total_sales)
         return `
         <div class="tooltip-data">
           <h4 class="key">Date</h4>
@@ -304,15 +348,16 @@ const renderCharts = (data) => {
       })
 
     const filterChoroplethByIssue = (selected) => {
-      samplePeriodEnd.filter(d => {
-        const currentIssueDate = new Date(selected.x)
-        const periodEnding = new Date(d)
-        const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
-        return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
-      })
+      if (!state.isClicked) {
+        samplePeriodEnd.filter(d => {
+          const currentIssueDate = new Date(selected.x)
+          const periodEnding = new Date(d)
+          const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
+          return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+        })
 
-      // us1Chart.colorDomain(generateScale(returnGroup()))
-      us1Chart.redraw()
+        us1Chart.redraw()
+      }
     }
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
@@ -347,8 +392,8 @@ const renderCharts = (data) => {
                         .on('mouseout.mapTip', mapTip.hide);
                 })
                 .on('filtered', (chart, filter) => {
-                  console.log(chart.filters())
-                  console.log(filter)
+                  // console.log(chart.filters())
+                  // console.log(filter)
                 })
                 .on("preRender", (chart) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
@@ -380,6 +425,7 @@ const renderCharts = (data) => {
           us1Chart.colorDomain(generateScale(returnGroup()))
           us1Chart.redraw()
         }
+
         lineChart1
           .width(lineChart1Width-50)
           .height(lineChart1Height-50)
@@ -396,22 +442,19 @@ const renderCharts = (data) => {
           .renderTitle(false)
           .on('renderlet.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
-              // Doesn't seem to be filtering aggressively enough (some sort of edge case)
               document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
               lineTip.show(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
                 const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
-                currentIssueDate >= periodStart && currentIssueDate <= periodEnding ? console.log(`issue ${selected.x} appeared between ${periodStart} and ${periodEnding}`) : null
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
               state.isClicked = true
-              // console.log(us1Chart.filters())
-              console.log(returnGroup().all())
+              state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
               us1Chart.colorDomain(generateScale(returnGroup()))
               us1Chart.redraw()
-              // squishy logic - need to see if there's a way to
+              // squishy logic
               chart.selectAll('circle').on('mouseleave', null)
                 .on('mouseover.lineTip', null)
                 .on('mouseout.lineTip', null)
