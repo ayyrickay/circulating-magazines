@@ -1,7 +1,6 @@
 const numberFormat = d3.format(".2f")
 const titleSelector = document.getElementById('title-select')
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
-let us1ChartRenderOption = 'rawData'
 // const us2Chart = dc.geoChoroplethChart("#us2-chart")
 const lineChart1 = dc.lineChart("#line-chart-1")
 const lineChart1Range = dc.barChart("#line-chart-1-range")
@@ -22,6 +21,8 @@ const changeRenderOption = (event) => {
     us1Chart.customUpdate()
     dc.redrawAll()
   } else {
+    document.getElementById('renderOption1').checked = true
+    document.getElementById('renderOption2').checked = false
     console.log('Please select a specific issue')
   }
 }
@@ -115,7 +116,7 @@ const colorScales = {
 }
 
 const transformValue = (data, statePopulation, total) => {
-  if (us1ChartRenderOption === 'percentOfPopulation') {
+  if (state.us1ChartRenderOption === 'percentOfPopulation') {
     return data / statePopulation
   } else {
     return data
@@ -123,7 +124,7 @@ const transformValue = (data, statePopulation, total) => {
 }
 
 const generateScale = (chartGroup) =>  {
-  if (us1ChartRenderOption === 'percentOfPopulation') {
+  if (state.us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
     return [0, getTopValue(chartGroup)]
@@ -145,7 +146,11 @@ window.onresize = (event) => {
 }
 
 const getTopValue = (group) => d3.max(group.all(), d => {
-  return d.value.sampled_total_sales
+  if (state.us1ChartRenderOption === 'percentOfPopulation') {
+    return d.value.sampled_total_sales / d.value.state_population
+  } else {
+    return d.value.sampled_total_sales
+  }
 })
 
 const renderCharts = (data) => {
@@ -181,24 +186,6 @@ const renderCharts = (data) => {
     return p
   }
 
-  // Reducer function for population Reducer
-  const popReducerAdd = (p, v) => {
-    ++p.count
-    p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
-    p.sampled_single_copy_sales += v.sampled_single_copy_sales
-    p.sampled_total_sales += v.sampled_total_sales / v.state_population
-    p.state_population = v.state_population // only valid for population viz
-    return p
-  }
-  const popReducerRemove = (p, v) => {
-    --p.count
-    p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
-    p.sampled_single_copy_sales -= v.sampled_single_copy_sales
-    p.sampled_total_sales -= v.sampled_total_sales / v.state_population
-    p.state_population = v.state_population // only valid for population viz
-    return p
-  }
-
   // generic georeducer
   const geoReducerDefault = () => ({
     count: 0,
@@ -214,8 +201,6 @@ const renderCharts = (data) => {
   const salesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
 
   state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-
-  const salesByStateOverPop = stateRegion.group().reduce(popReducerAdd, popReducerRemove, geoReducerDefault) // TODO: Replace 100 with a STATE_POPULATION variable
 
   // generate dimensions and groups for line/range chart
   const title1Dates = circulation.dimension(d => d.actual_issue_date)
@@ -253,22 +238,13 @@ const renderCharts = (data) => {
         })
     )
 
-  // Understands how to return the appropriate group for choropleth visualization
-  const returnGroup = () => {
-    if (us1ChartRenderOption === 'percentOfPopulation') {
-      return salesByStateOverPop
-    } else {
-      return salesByState
-    }
-  }
-
   const renderNumberWithCommas = (number) => {
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
   }
 
-  const generateMapTipText = (sampled_total_sales) => {
-    if (us1ChartRenderOption === 'percentOfPopulation') {
-      return `${sampled_total_sales.toFixed(3)} issues per person`
+  const generateMapTipText = (sampled_total_sales, state_population) => {
+    if (state.us1ChartRenderOption === 'percentOfPopulation') {
+      return `${(sampled_total_sales / state_population).toFixed(3)} issues per person`
     } else {
       return `${renderNumberWithCommas(sampled_total_sales)} issues`
     }
@@ -278,7 +254,8 @@ const renderCharts = (data) => {
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = returnGroup().all().filter(item => item.key === d.properties.name)[0]
+      console.log(state.us1ChartRenderOption, salesByState.all().filter(item => item.key === d.properties.name)[0])
+      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = salesByState.all().filter(item => item.key === d.properties.name)[0]
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
@@ -307,7 +284,7 @@ const renderCharts = (data) => {
         </div>
         <div class="tooltip-data">
           <h4 class="key">Total Circulation</h4>
-          <p> ${generateMapTipText(sampled_total_sales)}</p>
+          <p> ${generateMapTipText(sampled_total_sales, state_population)}</p>
         </div>
         `
         : `
@@ -362,15 +339,15 @@ const renderCharts = (data) => {
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
-          us1Chart.group(returnGroup())
+          us1Chart.group(salesByState)
           us1Chart.redraw()
         }
         us1Chart.width(us1Width)
                 .height(us1Height)
                 .dimension(stateRegion)
-                .group(returnGroup())
+                .group(salesByState)
                 .colors(d3.scaleQuantize().range(colorScales.blue))
-                .colorDomain(generateScale(returnGroup()))
+                .colorDomain(generateScale(salesByState))
                 .colorAccessor(d => {
                   return d ? d : 0
                 })
@@ -382,7 +359,13 @@ const renderCharts = (data) => {
                   .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
                 )
                 .valueAccessor(kv => {
-                  if (kv.value !== undefined) { return kv.value.sampled_total_sales }
+                  if (kv.value !== undefined) {
+                    if (state.us1ChartRenderOption === 'percentOfPopulation') {
+                      return kv.value.sampled_total_sales / kv.value.state_population
+                    } else {
+                      return kv.value.sampled_total_sales
+                    }
+                  }
                 })
                 .renderTitle(false)
                 .on('pretransition', (chart) => {
@@ -406,6 +389,11 @@ const renderCharts = (data) => {
           samplePeriodEnd.filter(null)
           state.isClicked = false
 
+          document.getElementById('renderOption1').checked = true
+          document.getElementById('renderOption2').checked = false
+          document.getElementById('clearIssueFilterButton').style.visibility = 'hidden'
+          state.us1ChartRenderOption = 'rawData'
+
           lineTip.hide()
           lineChart1.on('pretransition', (chart) => {
               chart.selectAll('circle')
@@ -418,11 +406,13 @@ const renderCharts = (data) => {
 
             chart.selectAll('circle').on('mouseleave.hover', (selected) => {
               samplePeriodEnd.filter(null)
-              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.colorDomain(generateScale(salesByState))
               us1Chart.redraw()
             })
           })
-          us1Chart.colorDomain(generateScale(returnGroup()))
+
+          us1Chart.customUpdate()
+          us1Chart.colorDomain(generateScale(salesByState))
           us1Chart.redraw()
         }
 
@@ -452,7 +442,7 @@ const renderCharts = (data) => {
               })
               state.isClicked = true
               state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.colorDomain(generateScale(salesByState))
               us1Chart.redraw()
               // squishy logic
               chart.selectAll('circle').on('mouseleave', null)
@@ -471,13 +461,13 @@ const renderCharts = (data) => {
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
 
-              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.colorDomain(generateScale(salesByState))
               us1Chart.redraw()
             })
 
             chart.selectAll('circle').on('mouseleave.hover', (selected) => {
               samplePeriodEnd.filter(null)
-              us1Chart.colorDomain(generateScale(returnGroup()))
+              us1Chart.colorDomain(generateScale(salesByState))
               us1Chart.redraw()
             })
 
@@ -503,6 +493,7 @@ const renderCharts = (data) => {
           .round(d3.timeMonth.round)
           .alwaysUseRounding(true)
           .xUnits(() => 200)
+          .y(d3.scaleLinear().domain([0, d3.max(title1CirculationByDate.all(), d => d.value.issue_circulation)]))
 
         lineChart1Range.yAxis().ticks(0)
 
