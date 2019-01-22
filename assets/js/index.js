@@ -334,6 +334,42 @@ const renderCharts = (data) => {
       }
     }
 
+    const resetCharts = () => {
+      samplePeriodEnd.filter(null)
+      state.isClicked = false
+
+      document.getElementById('renderOption1').checked = true
+      document.getElementById('renderOption2').checked = false
+      document.getElementById('clearIssueFilterButton').style.visibility = 'hidden'
+      state.us1ChartRenderOption = 'rawData'
+
+      lineTip.hide()
+      lineChart1.on('pretransition', (chart) => {
+          chart.selectAll('circle')
+              .call(lineTip)
+              .on('mouseover.lineTip', lineTip.show)
+              .on('mouseout.lineTip', lineTip.hide)
+      })
+      .on('renderlet.mouseover', (chart) => {
+        chart.selectAll('circle').on('mouseover.hover', filterChoroplethByIssue)
+
+        chart.selectAll('circle').on('mouseleave.hover', (selected) => {
+          samplePeriodEnd.filter(null)
+          us1Chart.colorDomain(generateScale(salesByState))
+          us1Chart.redraw()
+        })
+      })
+
+      us1Chart.customUpdate()
+      us1Chart.colorDomain(generateScale(salesByState))
+      us1Chart.redraw()
+    }
+
+    titleSelector.onchange = () => {
+      resetCharts()
+      generateCharts()
+    }
+
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
           us1Chart.group(salesByState)
@@ -385,36 +421,7 @@ const renderCharts = (data) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
                 });
 
-        lineChart1.unClick = () => {
-          samplePeriodEnd.filter(null)
-          state.isClicked = false
-
-          document.getElementById('renderOption1').checked = true
-          document.getElementById('renderOption2').checked = false
-          document.getElementById('clearIssueFilterButton').style.visibility = 'hidden'
-          state.us1ChartRenderOption = 'rawData'
-
-          lineTip.hide()
-          lineChart1.on('pretransition', (chart) => {
-              chart.selectAll('circle')
-                  .call(lineTip)
-                  .on('mouseover.lineTip', lineTip.show)
-                  .on('mouseout.lineTip', lineTip.hide)
-          })
-          .on('renderlet.mouseover', (chart) => {
-            chart.selectAll('circle').on('mouseover.hover', filterChoroplethByIssue)
-
-            chart.selectAll('circle').on('mouseleave.hover', (selected) => {
-              samplePeriodEnd.filter(null)
-              us1Chart.colorDomain(generateScale(salesByState))
-              us1Chart.redraw()
-            })
-          })
-
-          us1Chart.customUpdate()
-          us1Chart.colorDomain(generateScale(salesByState))
-          us1Chart.redraw()
-        }
+        lineChart1.unClick = resetCharts
 
         lineChart1
           .width(lineChart1Width-50)
@@ -513,6 +520,6 @@ const generateCharts = () => {
   .then(renderCharts)
 }
 
-titleSelector.onchange = generateCharts
+titleSelector.onchange = () => generateCharts
 
 generateCharts()
