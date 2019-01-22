@@ -520,6 +520,6 @@ const generateCharts = () => {
   .then(renderCharts)
 }
 
-titleSelector.onchange = () => generateCharts
+titleSelector.onchange = generateCharts
 
 generateCharts()
