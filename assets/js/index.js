@@ -1,7 +1,6 @@
 const numberFormat = d3.format(".2f")
 const titleSelector = document.getElementById('title-select')
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
-// const us2Chart = dc.geoChoroplethChart("#us2-chart")
 const lineChart1 = dc.lineChart("#line-chart-1")
 const lineChart1Range = dc.barChart("#line-chart-1-range")
 const us1Width = document.getElementById('us1-chart').offsetWidth
@@ -23,7 +22,6 @@ const changeRenderOption = (event) => {
   } else {
     document.getElementById('renderOption1').checked = true
     document.getElementById('renderOption2').checked = false
-    console.log('Please select a specific issue')
   }
 }
 
@@ -123,7 +121,7 @@ const transformValue = (data, statePopulation, total) => {
   }
 }
 
-const generateScale = (chartGroup) =>  {
+const generateScale = (chartGroup) => {
   if (state.us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
@@ -254,7 +252,6 @@ const renderCharts = (data) => {
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      console.log(state.us1ChartRenderOption, salesByState.all().filter(item => item.key === d.properties.name)[0])
       const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = salesByState.all().filter(item => item.key === d.properties.name)[0]
       return `
       <div class="tooltip-data">
@@ -368,6 +365,9 @@ const renderCharts = (data) => {
                   }
                 })
                 .renderTitle(false)
+                .on('renderlet.click', (chart) => {
+                  chart.selectAll('path').on('click', () => {})
+                })
                 .on('pretransition', (chart) => {
                     chart.selectAll('path')
                         .call(mapTip)
