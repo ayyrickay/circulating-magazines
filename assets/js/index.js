@@ -26,7 +26,9 @@ new Awesomplete(titleSelector, {
     {value: "coll", label: "Collier's"},
     {value: "amma", label: "American Magazine"},
     {value: "stsm", label: "Street & Smith Combination"},
-    {value: "adve", label: "Adventure"}
+    {value: "adve", label: "Adventure"},
+    {value: "thgr", label: "Thrilling Group"},
+    {value: "thgr", label: "Thrilling Fiction Unit"}
   ],
   replace: (suggestion) => {
     titleSelector.value = suggestion.label;
