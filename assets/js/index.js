@@ -14,6 +14,25 @@ const state = {
   us1ChartRenderOption: 'rawData'
 }
 
+titleSelector.value = 'Saturday Evening Post'
+
+new Awesomplete(titleSelector, {
+  autoFirst: true,
+  list: [
+    {value: "saev", label: "Saturday Evening Post"},
+    {value: "neyo", label: "New Yorker"},
+    {value: "vafa", label: "Vanity Fair"},
+    {value: "blma", label: "Black Mask"},
+    {value: "coll", label: "Collier's"},
+    {value: "amma", label: "American Magazine"},
+    {value: "stsm", label: "Street & Smith Combination"},
+    {value: "adve", label: "Adventure"}
+  ],
+  replace: (suggestion) => {
+    titleSelector.value = suggestion.label;
+  }
+})
+
 const changeRenderOption = (event) => {
   if (state.isClicked) {
     state.us1ChartRenderOption = event.target.value
@@ -372,10 +391,11 @@ const renderCharts = (data) => {
       us1Chart.redraw()
     }
 
-    titleSelector.onchange = () => {
-      resetCharts()
-      generateCharts()
-    }
+    window.addEventListener("awesomplete-selectcomplete", (e) => {
+                    state.selectedMagazine = e.text.value
+                    resetCharts()
+                    generateCharts()
+                }, false)
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
@@ -523,10 +543,8 @@ const renderCharts = (data) => {
 }
 
 const generateCharts = () => {
-  Promise.all([`./assets/data/${titleSelector.value}-geodata.json`, `./assets/data/${titleSelector.value}-circulation.json`].map(url => d3.json(url)))
+  Promise.all([`./assets/data/${state.selectedMagazine}-geodata.json`, `./assets/data/${state.selectedMagazine}-circulation.json`].map(url => d3.json(url)))
   .then(renderCharts)
 }
-
-titleSelector.onchange = generateCharts
 
 generateCharts()
