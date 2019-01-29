@@ -259,25 +259,30 @@ const renderCharts = (data) => {
         <p>${key}</p>
       </div>
       ${state.isClicked ?
-        `${sampled_mail_subscriptions ?
-          `<div class="tooltip-data">
+        `<div class="tooltip-data flex sb">
+        ${sampled_mail_subscriptions ?
+          `<div class="half-em-margin">
             <h4 class="key">Mail Subscriptions</h4>
             <p> ${renderNumberWithCommas(sampled_mail_subscriptions)}</p>
-          </div>`
+           </div>
+          `
         : ''}
         ${sampled_single_copy_sales ?
-          `<div class="tooltip-data">
+          `<div class="half-em-margin">
             <h4 class="key">Single Copy Sales</h4>
             <p> ${renderNumberWithCommas(sampled_single_copy_sales)}</p>
-          </div>`
+           </div>`
         : ''}
-        <div class="tooltip-data">
-          <h4 class="key">% of State Population</h4>
-          <p> ${(sampled_total_sales/state_population * 100).toFixed(3)}%</p>
         </div>
-        <div class="tooltip-data">
-          <h4 class="key">% of Total Circulation</h4>
-          <p> ${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%</p>
+        <div class="tooltip-data flex sb">
+          <div class="half-em-margin">
+            <h4 class="key">% of State Population</h4>
+            <p> ${(sampled_total_sales/state_population * 100).toFixed(3)}%</p>
+          </div>
+          <div class="half-em-margin">
+            <h4 class="key">% of Total Circulation</h4>
+            <p> ${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%</p>
+          </div>
         </div>
         <div class="tooltip-data">
           <h4 class="key">Total Circulation</h4>
@@ -306,17 +311,19 @@ const renderCharts = (data) => {
           <h4 class="key">Circulation</h4>
           <p> ${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
         </div>
-        <div class="tooltip-data">
-          <h4 class="key">Price</h4>
-          <p>${price ? price : 'Unknown'}</p>
+        <div class="tooltip-data flex sb">
+          <div class="half-em-margin">
+            <h4 class="key">Editor</h4>
+            <p>${editor ? editor : 'Unkown'}</p>
+          </div>
+          <div class="half-em-margin">
+            <h4 class="key">Price</h4>
+            <p>${price ? price : 'Unknown'}</p>
+          </div>
         </div>
         <div class="tooltip-data">
           <h4 class="key">Publishing Company</h4>
           <p>${publishing_company ? publishing_company : 'Unkown'}</p>
-        </div>
-        <div class="tooltip-data">
-          <h4 class="key">Editor</h4>
-          <p>${editor ? editor : 'Unkown'}</p>
         </div>
         `
       })

@@ -206,6 +206,18 @@ body {
   margin-bottom: 1em;
 }
 
+.flex {
+	display: flex;
+}
+
+.sb {
+	justify-content:  space-between;
+}
+
+.half-em-margin {
+	margin-right: .5em;
+}
+
 .tooltip .key {
   text-transform: uppercase;
   font-size: .7em;

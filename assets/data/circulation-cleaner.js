@@ -1,4 +1,4 @@
-//
+ //
 // # For each GEO record, identify date field
 // # Generate period_starting field (6 months earlier)
 // # Filter combo data based on the issue and year
@@ -26,17 +26,18 @@ const getDecade = (date) => {
 const cleanCirculation = circulationData.circulationData.map(match => {
   return {
         actual_issue_date: new Date(match.year, match.month-1, `${match.day || 1}`),
-        issue_circulation: match._circulation,
-        price: match._price,
-        type: match.type,
-        publishing_company: match['publishing company'],
-        titles_included: match['titles included'],
+        issue_circulation: match.circulation,
+        circulation_quality: match.circulation_quality,
+        circulation_source: match.circulation_source,
+        price: match.price,
+        publishing_company: match.publisher,
+        publishing_group: match.publishing_group,
+        titles_included: match.titles_included,
         editor: match.editor,
         magazine_id: match.magazine_id,
         type_id: match.type_id,
-        circulation_for_db: match.circulation_for_db,
-        price_for_db: match.price_for_db,
-        magazine_title: match.magazine
+        magazine_title: match.magazine,
+        canonical_title: match.canonical_title
       }
 }
   )
