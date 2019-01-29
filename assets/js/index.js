@@ -351,19 +351,6 @@ const renderCharts = (data) => {
         `
       })
 
-    const filterChoroplethByIssue = (selected) => {
-      if (!state.isClicked) {
-        samplePeriodEnd.filter(d => {
-          const currentIssueDate = new Date(selected.x)
-          const periodEnding = new Date(d)
-          const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getYear(), 6, 1)) // error is definitely on this line
-          return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
-        })
-
-        us1Chart.redraw()
-      }
-    }
-
     const resetCharts = () => {
       samplePeriodEnd.filter(null)
       state.isClicked = false
