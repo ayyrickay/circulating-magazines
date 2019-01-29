@@ -271,7 +271,11 @@ const renderCharts = (data) => {
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = salesByState.all().filter(item => item.key === d.properties.name)[0]
+      const selectedItem = salesByState.all().filter(item => item.key === d.properties.name)[0]
+      if(!selectedItem) {
+        return `<div class="tooltip-data"></div>`
+      }
+      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = selectedItem
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
@@ -377,7 +381,17 @@ const renderCharts = (data) => {
               .on('mouseout.lineTip', lineTip.hide)
       })
       .on('renderlet.mouseover', (chart) => {
-        chart.selectAll('circle').on('mouseover.hover', filterChoroplethByIssue)
+        chart.selectAll('circle').on('mouseover.hover', (selected) => {
+          samplePeriodEnd.filter(d => {
+            const currentIssueDate = new Date(selected.x)
+            const periodEnding = new Date(d)
+            const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
+            return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+          })
+
+          us1Chart.colorDomain(generateScale(salesByState))
+          us1Chart.redraw()
+        })
 
         chart.selectAll('circle').on('mouseleave.hover', (selected) => {
           samplePeriodEnd.filter(null)
