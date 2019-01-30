@@ -13,7 +13,7 @@ for (let i = 0; i < titles.length; i++) {
   if (title) {
     console.log(title.magazine_title, title.title_code)
     const names = title.magazine_title.split('@')
-    names.forEach(name => data.push({value: title.title_code, label: name}))
+    names.forEach(name => data.push({value: title.title_code.toLowerCase(), label: name}))
   } else {
     console.log('magazine title is undefined for', json[4])
   }

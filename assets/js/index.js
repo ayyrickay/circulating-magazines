@@ -18,40 +18,9 @@ titleSelector.value = 'Saturday Evening Post'
 
 new Awesomplete(titleSelector, {
   autoFirst: true,
-  list: [
-    {"value":"ADVE","label":"Adventure"},
-    {"value":"AMME","label":"American Mercury"},
-    {"value":"ATMO","label":"Atlantic Monthly"},
-    {"value":"BATM","label":"Batman"},
-    {"value":"BLBO","label":"Blue Book Magazine"},
-    {"value":"BLMA","label":"Black Mask"},
-    {"value":"CENT","label":"Century Magazine"},
-    {"value":"CLMA","label":"Clayton Magazines"},
-    {"value":"CLMAB","label":"Ace High"},
-    {"value":"CLMAB","label":"Ranch Romances"},
-    {"value":"CLMAB","label":"Cowboy Stories"},
-    {"value":"CLMAB","label":"Clues"},
-    {"value":"COLL","label":"Collier's"},
-    {"value":"DEFI","label":"Dell Fiction Group"},
-    {"value":"DIAL","label":"Dial"},
-    {"value":"FIHO","label":"Action Stories"},
-    {"value":"FIHO","label":"Novelets"},
-    {"value":"FORU","label":"Forum and Century"},
-    {"value":"HARP","label":"Harper's Magazine"},
-    {"value":"JUDG","label":"Judge"},
-    {"value":"LIBE","label":"Liberty"},
-    {"value":"MUNS","label":"Munsey Combination"},
-    {"value":"NEYO","label":"New Yorker"},
-    {"value":"PLAY","label":"Playboy"},
-    {"value":"POPU","label":"Popular Fiction Group"},
-    {"value":"SAEV","label":"Saturday Evening Post"},
-    {"value":"SCMA","label":"Scribner's Magazine"},
-    {"value":"SHST","label":"Short Stories"},
-    {"value":"SMSE","label":"Smart Set"},
-    {"value":"STSM","label":"Street and Smith Combination"},
-    {"value":"SUPE","label":"Superman"},
-    {"value":"THGR","label":"Thrilling Fiction Unit"},
-    {"value":"VAFA","label":"Vanity Fair"}],
+  list: [{"value":"adve","label":"Adventure"},
+  {"value":"amma","label":"American Magazine"},
+  {"value":"amme","label":"American Mercury"},{"value":"atmo","label":"Atlantic Monthly"},{"value":"batm","label":"Batman"},{"value":"blbo","label":"Blue Book Magazine"},{"value":"blma","label":"Black Mask"},{"value":"cent","label":"Century Magazine"},{"value":"clma","label":"Clayton Magazines"},{"value":"clmab","label":"Ace High"},{"value":"clmab","label":"Ranch Romances"},{"value":"clmab","label":"Cowboy Stories"},{"value":"clmab","label":"Clues"},{"value":"coll","label":"Collier's"},{"value":"defi","label":"Dell Fiction Group"},{"value":"dial","label":"Dial"},{"value":"fiho","label":"Action Stories"},{"value":"fiho","label":"Novelets"},{"value":"foru","label":"Forum and Century"},{"value":"harp","label":"Harper's Magazine"},{"value":"judg","label":"Judge"},{"value":"libe","label":"Liberty"},{"value":"muns","label":"Munsey Combination"},{"value":"neyo","label":"New Yorker"},{"value":"play","label":"Playboy"},{"value":"popu","label":"Popular Fiction Group"},{"value":"saev","label":"Saturday Evening Post"},{"value":"scma","label":"Scribner's Magazine"},{"value":"shst","label":"Short Stories"},{"value":"smse","label":"Smart Set"},{"value":"stsm","label":"Street and Smith Combination"},{"value":"supe","label":"Superman"},{"value":"thgr","label":"Thrilling Fiction Unit"},{"value":"vafa","label":"Vanity Fair"}],
   replace: (suggestion) => {
     titleSelector.value = suggestion.label;
   }
@@ -568,7 +537,7 @@ const renderCharts = (data) => {
 }
 
 const generateCharts = () => {
-  Promise.all([`assets/data/${state.selectedMagazine}-geodata.json`, `assets/data/${state.selectedMagazine}-circulation.json`].map(url => d3.json(url)))
+  Promise.all([`assets/data/clean/${state.selectedMagazine}-geodata.json`, `assets/data/clean/${state.selectedMagazine}-circulation.json`].map(url => d3.json(url)))
   .then(renderCharts)
 }
 
