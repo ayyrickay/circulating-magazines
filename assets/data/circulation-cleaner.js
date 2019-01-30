@@ -50,7 +50,7 @@ console.log(circulationData.circulationData[0])
 console.log(cleanCirculation[0])
 console.log('final length of array is', cleanCirculation.length)
 
-fs.writeFile(`clean/${args[0].split('-')[0].toLowerCase()}-circulation.json`, JSON.stringify(cleanCirculation), 'utf8', (err) => {
+fs.writeFile(`${args[0].split('-')[0].toLowerCase()}-circulation.json`, JSON.stringify(cleanCirculation), 'utf8', (err) => {
   if (err) throw err
   console.log('Successfully joined data')
 })
