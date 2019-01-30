@@ -568,7 +568,7 @@ const renderCharts = (data) => {
 }
 
 const generateCharts = () => {
-  Promise.all([`assets/data/clean/${state.selectedMagazine}-geodata.json`, `assets/data/clean/${state.selectedMagazine}-circulation.json`].map(url => d3.json(url)))
+  Promise.all([`assets/data/${state.selectedMagazine}-geodata.json`, `assets/data/${state.selectedMagazine}-circulation.json`].map(url => d3.json(url)))
   .then(renderCharts)
 }
 
