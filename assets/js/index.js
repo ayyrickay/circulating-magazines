@@ -19,17 +19,39 @@ titleSelector.value = 'Saturday Evening Post'
 new Awesomplete(titleSelector, {
   autoFirst: true,
   list: [
-    {value: "saev", label: "Saturday Evening Post"},
-    {value: "neyo", label: "New Yorker"},
-    {value: "vafa", label: "Vanity Fair"},
-    {value: "blma", label: "Black Mask"},
-    {value: "coll", label: "Collier's"},
-    {value: "amma", label: "American Magazine"},
-    {value: "stsm", label: "Street & Smith Combination"},
-    {value: "adve", label: "Adventure"},
-    {value: "thgr", label: "Thrilling Group"},
-    {value: "thgr", label: "Thrilling Fiction Unit"}
-  ],
+    {"value":"ADVE","label":"Adventure"},
+    {"value":"AMME","label":"American Mercury"},
+    {"value":"ATMO","label":"Atlantic Monthly"},
+    {"value":"BATM","label":"Batman"},
+    {"value":"BLBO","label":"Blue Book Magazine"},
+    {"value":"BLMA","label":"Black Mask"},
+    {"value":"CENT","label":"Century Magazine"},
+    {"value":"CLMA","label":"Clayton Magazines"},
+    {"value":"CLMAB","label":"Ace High"},
+    {"value":"CLMAB","label":"Ranch Romances"},
+    {"value":"CLMAB","label":"Cowboy Stories"},
+    {"value":"CLMAB","label":"Clues"},
+    {"value":"COLL","label":"Collier's"},
+    {"value":"DEFI","label":"Dell Fiction Group"},
+    {"value":"DIAL","label":"Dial"},
+    {"value":"FIHO","label":"Action Stories"},
+    {"value":"FIHO","label":"Novelets"},
+    {"value":"FORU","label":"Forum and Century"},
+    {"value":"HARP","label":"Harper's Magazine"},
+    {"value":"JUDG","label":"Judge"},
+    {"value":"LIBE","label":"Liberty"},
+    {"value":"MUNS","label":"Munsey Combination"},
+    {"value":"NEYO","label":"New Yorker"},
+    {"value":"PLAY","label":"Playboy"},
+    {"value":"POPU","label":"Popular Fiction Group"},
+    {"value":"SAEV","label":"Saturday Evening Post"},
+    {"value":"SCMA","label":"Scribner's Magazine"},
+    {"value":"SHST","label":"Short Stories"},
+    {"value":"SMSE","label":"Smart Set"},
+    {"value":"STSM","label":"Street and Smith Combination"},
+    {"value":"SUPE","label":"Superman"},
+    {"value":"THGR","label":"Thrilling Fiction Unit"},
+    {"value":"VAFA","label":"Vanity Fair"}],
   replace: (suggestion) => {
     titleSelector.value = suggestion.label;
   }
@@ -546,7 +568,7 @@ const renderCharts = (data) => {
 }
 
 const generateCharts = () => {
-  Promise.all([`./assets/data/${state.selectedMagazine}-geodata.json`, `./assets/data/${state.selectedMagazine}-circulation.json`].map(url => d3.json(url)))
+  Promise.all([`./assets/data/clean/${state.selectedMagazine}-geodata.json`, `./assets/data/clean/${state.selectedMagazine}-circulation.json`].map(url => d3.json(url)))
   .then(renderCharts)
 }
 
