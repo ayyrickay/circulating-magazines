@@ -23,8 +23,10 @@ const getDecade = (date) => {
   return yearArray.join('')
 }
 
-const cleanCirculation = circulationData.circulationData.map(match => {
-  return {
+const cleanCirculation = circulationData.circulationData
+  .filter(issue => issue.circulation)
+  .map(match => {
+    return {
         actual_issue_date: new Date(match.year, match.month-1, `${match.day || 1}`),
         issue_circulation: match.circulation,
         circulation_quality: match.circulation_quality,
@@ -48,7 +50,7 @@ console.log(circulationData.circulationData[0])
 console.log(cleanCirculation[0])
 console.log('final length of array is', cleanCirculation.length)
 
-fs.writeFile(`${args[0].split('-')[0].toLowerCase()}-circulation.json`, JSON.stringify(cleanCirculation), 'utf8', (err) => {
+fs.writeFile(`clean/${args[0].split('-')[0].toLowerCase()}-circulation.json`, JSON.stringify(cleanCirculation), 'utf8', (err) => {
   if (err) throw err
   console.log('Successfully joined data')
 })

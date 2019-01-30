@@ -39,7 +39,7 @@ const getPopulation = (state, year) => {
   }
 }
 
-const revisedGeoData = geoData.geodata.map(data => {
+const revisedGeoData = geoData.geodata.filter(data => data.mail_subscriptions > -1 && data.single_copy_sales > -1).map(data => {
   const [month, day, year] = data.period_ending.split('/')
   if (!year) return console.log(data)
   const periodEnding = new Date(year.indexOf('19') < -1 ? `19${year}` : year, parseInt(month)-1, day)
@@ -65,7 +65,7 @@ console.log(args[0].split('-')[0])
 console.log(finalData[0])
 console.log('final length of array is', finalData.length)
 
-fs.writeFile(`${args[0].split('-')[0].toLowerCase()}-geodata.json`, JSON.stringify(finalData), 'utf8', (err) => {
+fs.writeFile(`clean/${args[0].split('-')[0].toLowerCase()}-geodata.json`, JSON.stringify(finalData), 'utf8', (err) => {
   if (err) throw err
   console.log('Successfully cleaned data')
 })
