@@ -65,7 +65,7 @@ console.log(args[0].split('-')[0])
 console.log(finalData[0])
 console.log('final length of array is', finalData.length)
 
-fs.writeFile(`${args[0].split('-')[0].toLowerCase()}-geodata.json`, JSON.stringify(finalData), 'utf8', (err) => {
+fs.writeFile(`${__dirname, `/../clean/${args[0].split('-')[0].toLowerCase()}-geodata.json`, JSON.stringify(finalData), 'utf8', (err) => {
   if (err) throw err
   console.log('Successfully cleaned data')
 })
