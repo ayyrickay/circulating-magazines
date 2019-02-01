@@ -41,6 +41,7 @@ const getPopulation = (state, year) => {
 
 const revisedGeoData = geoData.geodata.filter(data => data.mail_subscriptions > -1 && data.single_copy_sales > -1).map(data => {
   const [month, day, year] = data.period_ending.split('/')
+  const [sampleMonth, sampleDay, sampleYear] = data.issue_date.split('/')
   if (!year) return console.log(data)
   const periodEnding = new Date(year.indexOf('19') < -1 ? `19${year}` : year, parseInt(month)-1, day)
   const periodStart = new Date(new Date(periodEnding).setMonth(periodEnding.getMonth() - 6))
@@ -52,7 +53,7 @@ const revisedGeoData = geoData.geodata.filter(data => data.mail_subscriptions > 
     sampled_mail_subscriptions: parseInt(data.mail_subscriptions),
     sampled_single_copy_sales: parseInt(data.single_copy_sales),
     sampled_total_sales: parseInt(data.mail_subscriptions + data.single_copy_sales),
-    sampled_issue_date: data.issue_date,
+    sampled_issue_date: new Date(parseInt(sampleYear), parseInt(sampleMonth) -1, parseInt(sampleDay)),
     magazine_title: data.title,
     title_code: data.title_code
   }

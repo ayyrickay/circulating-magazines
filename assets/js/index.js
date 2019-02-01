@@ -184,6 +184,7 @@ const renderCharts = (data) => {
     p.sampled_single_copy_sales += v.sampled_single_copy_sales
     p.sampled_total_sales += v.sampled_total_sales
     p.state_population = v.state_population // only valid for population viz
+    p.sampleDate[v.sampled_issue_date] = v.sampled_issue_date
     return p
   }
   const geoReducerRemove = (p, v) => {
@@ -192,6 +193,7 @@ const renderCharts = (data) => {
     p.sampled_single_copy_sales -= v.sampled_single_copy_sales
     p.sampled_total_sales -= v.sampled_total_sales
     p.state_population = v.state_population // only valid for population viz
+    delete p.sampleDate[v.sampled_issue_date]
     return p
   }
 
@@ -201,7 +203,8 @@ const renderCharts = (data) => {
     sampled_mail_subscriptions: 0,
     sampled_single_copy_sales: 0,
     sampled_total_sales: 0,
-    state_population: 0
+    state_population: 0,
+    sampleDate: {}
   })
 
   // Generate dimensions and groups for choropleth
@@ -267,11 +270,21 @@ const renderCharts = (data) => {
       if(!selectedItem) {
         return `<div class="tooltip-data"></div>`
       }
-      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = selectedItem
+      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population, sampleDate}} = selectedItem
+      const [sampleMonth, sampleDay, sampleYear] = Object.keys(sampleDate)[0].split('/')
       return `
-      <div class="tooltip-data">
-        <h4 class="key">State</h4>
-        <p>${key}</p>
+      <div class="tooltip-data flex sb">
+        <div class="half-em-margin">
+          <h4 class="key">State</h4>
+          <p>${key}</p>
+        </div>
+        ${state.isClicked ?
+          `
+          <div class="half-em-margin">
+            <h4 class="key">Sampled Date</h4>
+            <p>${new Date(parseInt(sampleYear), parseInt(sampleMonth) -1, parseInt(sampleDay)).format('mmm dd, yyyy')}</p>
+          </div>
+          ` : '' }
       </div>
       ${state.isClicked ?
         `<div class="tooltip-data flex sb">
@@ -434,7 +447,7 @@ const renderCharts = (data) => {
           .renderTitle(false)
           .on('renderlet.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
-              state.isClicked = true
+              state.isClicked = selected
               document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
               lineTip.show(selected)
               samplePeriodEnd.filter(d => {
