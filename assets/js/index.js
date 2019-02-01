@@ -353,31 +353,6 @@ const renderCharts = (data) => {
       state.us1ChartRenderOption = 'rawData'
 
       lineTip.hide()
-      lineChart1.on('pretransition', (chart) => {
-          chart.selectAll('circle')
-              .call(lineTip)
-              .on('mouseover.lineTip', lineTip.show)
-              .on('mouseout.lineTip', lineTip.hide)
-      })
-      .on('renderlet.mouseover', (chart) => {
-        chart.selectAll('circle').on('mouseover.hover', (selected) => {
-          samplePeriodEnd.filter(d => {
-            const currentIssueDate = new Date(selected.x)
-            const periodEnding = new Date(d)
-            const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
-            return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
-          })
-
-          us1Chart.colorDomain(generateScale(salesByState))
-          us1Chart.redraw()
-        })
-
-        chart.selectAll('circle').on('mouseleave.hover', (selected) => {
-          samplePeriodEnd.filter(null)
-          us1Chart.colorDomain(generateScale(salesByState))
-          us1Chart.redraw()
-        })
-      })
 
       us1Chart.customUpdate()
       us1Chart.colorDomain(generateScale(salesByState))
@@ -459,6 +434,7 @@ const renderCharts = (data) => {
           .renderTitle(false)
           .on('renderlet.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
+              state.isClicked = true
               document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
               lineTip.show(selected)
               samplePeriodEnd.filter(d => {
@@ -467,43 +443,47 @@ const renderCharts = (data) => {
                 const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
                 return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
               })
-              state.isClicked = true
+
               state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
               us1Chart.colorDomain(generateScale(salesByState))
               us1Chart.redraw()
-              // squishy logic
-              chart.selectAll('circle').on('mouseleave', null)
-                .on('mouseover.lineTip', null)
-                .on('mouseout.lineTip', null)
-                .on('mouseover.hover', null)
-                .on('mouseleave.hover', null)
             })
           })
           .on('renderlet.mouseover', (chart) => {
             chart.selectAll('circle').on('mouseover.hover', (selected) => {
-              samplePeriodEnd.filter(d => {
-                const currentIssueDate = new Date(selected.x)
-                const periodEnding = new Date(d)
-                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
-                return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
-              })
+              if (!state.isClicked) {
+                samplePeriodEnd.filter(d => {
+                  const currentIssueDate = new Date(selected.x)
+                  const periodEnding = new Date(d)
+                  const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
+                  return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+                })
 
-              us1Chart.colorDomain(generateScale(salesByState))
-              us1Chart.redraw()
+                state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+
+                us1Chart.colorDomain(generateScale(salesByState))
+                us1Chart.redraw()
+              }
             })
 
             chart.selectAll('circle').on('mouseleave.hover', (selected) => {
-              samplePeriodEnd.filter(null)
-              us1Chart.colorDomain(generateScale(salesByState))
-              us1Chart.redraw()
+              if (!state.isClicked) {
+                samplePeriodEnd.filter(null)
+                us1Chart.colorDomain(generateScale(salesByState))
+                us1Chart.redraw()
+              }
             })
 
           })
           .on('pretransition', (chart) => {
               chart.selectAll('circle')
                   .call(lineTip)
-                  .on('mouseover.lineTip', lineTip.show)
-                  .on('mouseout.lineTip', lineTip.hide)
+                  .on('mouseover.lineTip', (selected) => {
+                    state.isClicked ? null : lineTip.show(selected)
+                  })
+                  .on('mouseout.lineTip', (selected) => {
+                    state.isClicked ? null : lineTip.hide(selected)
+                  })
           })
           .render()
 
