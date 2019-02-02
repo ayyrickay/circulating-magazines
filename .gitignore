@@ -2,3 +2,4 @@ assets/hidden-data
 .DS_Store
 node_modules
 assets/data/rawData
+assets/.DS_Store

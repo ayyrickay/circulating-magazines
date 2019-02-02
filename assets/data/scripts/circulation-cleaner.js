@@ -12,7 +12,7 @@
 
 const args = process.argv.slice(2)
 const path = require('path')
-const circulationdataPath = path.join(__dirname, args[0])
+const circulationdataPath = path.join(__dirname, `/../rawData/${args[0]}-Circulation.js`)
 const fs = require('fs')
 const circulationData = require(circulationdataPath)
 
@@ -22,6 +22,8 @@ const getDecade = (date) => {
   yearArray[yearArray.length - 1] = 0
   return yearArray.join('')
 }
+
+console.log(circulationdataPath)
 
 const cleanCirculation = circulationData.circulationData
   .filter(issue => issue.circulation)
@@ -50,7 +52,7 @@ console.log(circulationData.circulationData[0])
 console.log(cleanCirculation[0])
 console.log('final length of array is', cleanCirculation.length)
 
-fs.writeFile(path.join(__dirname, `/../clean/${args[0].split('-')[0].toLowerCase()}-circulation.json`), JSON.stringify(cleanCirculation), 'utf8', (err) => {
+fs.writeFile(path.join(__dirname, `/../clean/${args[0].toLowerCase()}-circulation.json`), JSON.stringify(cleanCirculation), 'utf8', (err) => {
   if (err) throw err
   console.log('Successfully joined data')
 })
