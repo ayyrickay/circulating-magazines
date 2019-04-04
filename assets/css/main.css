@@ -103,9 +103,9 @@ body {
 .choropleth-container {
 	display: flex;
 	flex-flow: column;
-	height: 20em;
-	width: 45%;
-	margin-bottom: 1em;
+	height: 23em;
+	width: 50%;
+	margin: 1em 0em;
 	background-color: #fff;
   border: rgba(0,0,0,.3) 1px solid;
   box-shadow: 0 4px 4px 0 rgba(0,0,0,0.2);
@@ -231,6 +231,10 @@ body {
   margin-bottom: 1em;
 }
 
+.tooltip-data > * {
+	flex: 1 1 0;
+}
+
 .flex {
 	display: flex;
 }
@@ -267,6 +271,10 @@ body {
 }
 
 #clearIssueFilterButton {
+	visibility: hidden;
+}
+
+.switch-button {
   color: #fff;
   font-size: 14px;
   text-align: center;
@@ -274,8 +282,9 @@ body {
 	border-color: transparent;
   text-shadow: none;
   padding: 6px 14px;
+	margin-right: .5em;
   transition: all 0.1s ease-in-out;
-	visibility: hidden;
+	border-bottom: #fff 3px solid;
 }
 
 .select-field {

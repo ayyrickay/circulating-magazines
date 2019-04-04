@@ -277,43 +277,13 @@ const renderCharts = (data) => {
         <h4 class="key">State</h4>
         <p>${key}</p>
       </div>
+      <div class="tooltip-data">
       ${state.isClicked ?
-        `<div class="tooltip-data flex sb">
-        ${sampled_mail_subscriptions ?
-          `<div class="half-em-margin">
-            <h4 class="key">Mail Subscriptions</h4>
-            <p> ${renderNumberWithCommas(sampled_mail_subscriptions)}</p>
-           </div>
-          `
-        : ''}
-        ${sampled_single_copy_sales ?
-          `<div class="half-em-margin">
-            <h4 class="key">Single Copy Sales</h4>
-            <p> ${renderNumberWithCommas(sampled_single_copy_sales)}</p>
-           </div>`
-        : ''}
-        </div>
-        <div class="tooltip-data flex sb">
-          <div class="half-em-margin">
-            <h4 class="key">% of State Population</h4>
-            <p> ${(sampled_total_sales/state_population * 100).toFixed(3)}%</p>
-          </div>
-          <div class="half-em-margin">
-            <h4 class="key">% of Total Circulation</h4>
-            <p> ${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%</p>
-          </div>
-        </div>
-        <div class="tooltip-data">
-          <h4 class="key">Total Circulation</h4>
-          <p> ${generateMapTipText(sampled_total_sales, state_population)}</p>
-        </div>
-        `
-        : `
-          <div class="tooltip-data">
-            <h4 class="key">Data</h4>
-            <p> Please select a specific issue for more detailed data</p>
-          </div>
-        `}
+        '' :
+        `<h4 class="key">Data</h4>
+         <p> Please select a specific issue for more detailed data</p>`
+        }
+      </div>
       `
     })
 
@@ -341,7 +311,23 @@ const renderCharts = (data) => {
         publishing_company: publishing_company ? publishing_company : '-',
         editor: editor ? editor : '-'
       }
+    }
 
+    function renderIssueData(data) {
+      if (data) {
+        const {date, issue_circulation, publishing_company, price, editor} = prettifyIssueData(data)
+        document.getElementById('total-circulation').textContent = issue_circulation
+        document.getElementById('issue-date').textContent = date
+        document.getElementById('issue-publisher').textContent = publishing_company
+        document.getElementById('issue-price').textContent = price
+        document.getElementById('issue-editor').textContent = editor
+      } else {
+        document.getElementById('total-circulation').textContent = '-'
+        document.getElementById('issue-date').textContent = '-'
+        document.getElementById('issue-publisher').textContent = '-'
+        document.getElementById('issue-price').textContent = '-'
+        document.getElementById('issue-editor').textContent = '-'
+      }
     }
 
     const resetCharts = () => {
@@ -352,6 +338,7 @@ const renderCharts = (data) => {
       document.getElementById('renderOption2').checked = false
       document.getElementById('clearIssueFilterButton').style.visibility = 'hidden'
       state.us1ChartRenderOption = 'rawData'
+      renderIssueData()
 
       lineTip.hide()
 
@@ -407,17 +394,39 @@ const renderCharts = (data) => {
         }
 
         us1Chart.legendables = () => {
-                  const range = us1Chart.colors().range()
-                  const domain = us1Chart.colorDomain()
-                  const step = (domain[1] - domain[0]) / range.length
-                  let val = domain[0]
-                  return range.map(function (d, i) {
-                      const legendable = {name: `${formatNum(val)} - ${formatNum(val+step)}`, chart: us1Chart}
-                      legendable.color = us1Chart.colorCalculator()(val)
-                      val += step
-                      return legendable
-                  })
-              }
+          if (state.isClicked) {
+            const range = us1Chart.colors().range()
+            const domain = us1Chart.colorDomain()
+            const step = (domain[1] - domain[0]) / range.length
+            let val = domain[0]
+            return range.map(function (d, i) {
+                const legendable = {name: `${formatNum(val)} - ${formatNum(val+step)}`, chart: us1Chart}
+                legendable.color = us1Chart.colorCalculator()(val)
+                val += step
+                return legendable
+            })
+          } else {
+            return []
+          }
+        }
+
+        function renderGeoData(data) {
+          if (data && state.isClicked) {
+            const selectedItem = salesByState.all().filter(item => item.key === data.properties.name)[0]
+            const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = selectedItem
+            document.getElementById('selected-state').textContent = key
+            document.getElementById('mail-subscriptions').textContent = `${renderNumberWithCommas(sampled_mail_subscriptions)}`
+            document.getElementById('single-copy-sales').textContent = `${renderNumberWithCommas(sampled_single_copy_sales)}`
+            document.getElementById('state-pop').textContent = `${(sampled_total_sales/state_population * 100).toFixed(3)}%`
+            document.getElementById('percent-of-total').textContent = `${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%`
+          } else {
+            document.getElementById('selected-state').textContent = '-'
+            document.getElementById('mail-subscriptions').textContent = '-'
+            document.getElementById('single-copy-sales').textContent = '-'
+            document.getElementById('state-pop').textContent = '-'
+            document.getElementById('percent-of-total').textContent = '-'
+          }
+        }
 
         us1Chart.width(us1Width - 20)
                 .height(us1Height)
@@ -445,15 +454,15 @@ const renderCharts = (data) => {
                   }
                 })
                 .renderTitle(false)
-                .legend(dc.legend().x(10).y(10).itemHeight(5))
+                .legend(dc.legend().x(getWidth('us1-chart') / 100).y(getHeight('us1-chart')).horizontal(true).itemHeight(5))
                 .on('renderlet.click', (chart) => {
                   chart.selectAll('path').on('click', () => {})
                 })
                 .on('pretransition', (chart) => {
                     chart.selectAll('path')
                         .call(mapTip)
-                        .on('mouseover.mapTip', mapTip.show)
-                        .on('mouseout.mapTip', mapTip.hide);
+                        .on('mouseover.mapTip', d => {mapTip.show(d); renderGeoData(d)})
+                        .on('mouseout.mapTip', d => {mapTip.hide(d); renderGeoData(null)});
                 })
                 .on('filtered', (chart, filter) => {
                   // console.log(chart.filters())
@@ -467,14 +476,6 @@ const renderCharts = (data) => {
                 });
 
         lineChart.unClick = resetCharts
-
-        function renderIssueData(issueData) {
-          document.getElementById('total-circulation').textContent = issueData.issue_circulation
-          document.getElementById('issue-date').textContent = issueData.date
-          document.getElementById('issue-publisher').textContent = issueData.publishing_company
-          document.getElementById('issue-price').textContent = issueData.price
-          document.getElementById('issue-editor').textContent = issueData.editor
-        }
 
         lineChart
           .width(lineChartWidth-50)
@@ -494,8 +495,7 @@ const renderCharts = (data) => {
             chart.selectAll('circle').on('click', (selected) => {
               state.isClicked = true
               document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
-              lineTip.show(selected)
-              renderIssueData(prettifyIssueData(selected))
+              renderIssueData(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
@@ -538,10 +538,10 @@ const renderCharts = (data) => {
               chart.selectAll('circle')
                   .call(lineTip)
                   .on('mouseover.lineTip', (selected) => {
-                    state.isClicked ? null : lineTip.show(selected)
+                    lineTip.show(selected)
                   })
                   .on('mouseout.lineTip', (selected) => {
-                    state.isClicked ? null : lineTip.hide(selected)
+                    lineTip.hide(selected)
                   })
           })
           .render()
