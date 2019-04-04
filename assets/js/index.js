@@ -347,7 +347,6 @@ const renderCharts = (data) => {
         }
 
         us1Chart.legendables = () => {
-          console.log('running legendables', state.isClicked)
           if (state.isClicked) {
             const range = us1Chart.colors().range()
             const domain = us1Chart.colorDomain()
@@ -408,7 +407,7 @@ const renderCharts = (data) => {
                   }
                 })
                 .renderTitle(false)
-                .legend(dc.legend().x(getWidth('us1-chart') / 110).y(getHeight('us1-chart') + 10).horizontal(true).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
+                .legend(dc.legend().x(getWidth('us1-chart') / 110).y(getHeight('us1-chart') - 10).horizontal(true).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
                 .on('renderlet.click', (chart) => {
                   chart.selectAll('path').on('click', () => {})
                 })
