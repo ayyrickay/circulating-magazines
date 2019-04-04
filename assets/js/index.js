@@ -1,3 +1,4 @@
+import { notes, colorScales, stateCodes } from '../data/constants.js'
 const numberFormat = d3.format(".2f")
 const titleSelector = document.getElementById('title-select')
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
@@ -26,7 +27,10 @@ new Awesomplete(titleSelector, {
   }
 })
 
-const changeRenderOption = (event) => {
+// ****************************************************
+// Helper Functions
+// ****************************************************
+function changeRenderOption(event) {
   if (state.isClicked) {
     state.us1ChartRenderOption = event.target.value
     us1Chart.customUpdate()
@@ -37,7 +41,7 @@ const changeRenderOption = (event) => {
   }
 }
 
-const getWidth = (element) => {
+function getWidth(element) {
   if (document.getElementById(element)) {
     return document.getElementById('line-chart').offsetWidth
   } else {
@@ -46,7 +50,7 @@ const getWidth = (element) => {
   }
 }
 
-const getHeight = (element) => {
+function getHeight(element) {
   if (document.getElementById(element)) {
     return document.getElementById('line-chart').offsetHeight
   } else {
@@ -55,77 +59,7 @@ const getHeight = (element) => {
   }
 }
 
-
-const stateCodes = {
-  'Alabama': 'AL',
-  'Alaska': 'AK',
-  'American Samoa': 'AS',
-  'Arizona': 'AZ',
-  'Arkansas': 'AR',
-  'California': 'CA',
-  'Colorado': 'CO',
-  'Connecticut': 'CT',
-  'Delaware': 'DE',
-  'District Of Columbia': 'DC',
-  'Federated States Of Micronesia': 'FM',
-  'Florida': 'FL',
-  'Georgia': 'GA',
-  'Guam': 'GU',
-  'Hawaii': 'HI',
-  'Idaho': 'ID',
-  'Illinois': 'IL',
-  'Indiana': 'IN',
-  'Iowa': 'IA',
-  'Kansas': 'KS',
-  'Kentucky': 'KY',
-  'Louisiana': 'LA',
-  'Maine': 'ME',
-  'Marshall Islands': 'MH',
-  'Maryland': 'MD',
-  'Massachusetts': 'MA',
-  'Michigan': 'MI',
-  'Minnesota': 'MN',
-  'Mississippi': 'MS',
-  'Missouri': 'MO',
-  'Montana': 'MT',
-  'Nebraska': 'NE',
-  'Nevada': 'NV',
-  'New Hampshire': 'NH',
-  'New Jersey': 'NJ',
-  'New Mexico': 'NM',
-  'New York': 'NY',
-  'North Carolina': 'NC',
-  'North Dakota': 'ND',
-  'Northern Mariana Islands': 'MP',
-  'Ohio': 'OH',
-  'Oklahoma': 'OK',
-  'Oregon': 'OR',
-  'Palau': 'PW',
-  'Pennsylvania': 'PA',
-  'Puerto Rico': 'PR',
-  'Rhode Island': 'RI',
-  'South Carolina': 'SC',
-  'South Dakota': 'SD',
-  'Tennessee': 'TN',
-  'Texas': 'TX',
-  'Utah': 'UT',
-  'Vermont': 'VT',
-  'Virgin Islands': 'VI',
-  'Virginia': 'VA',
-  'Washington': 'WA',
-  'West Virginia': 'WV',
-  'Wisconsin': 'WI',
-  'Wyoming': 'WY'
-}
-
-const colorScales = {
-  red: ['#FFEBEE', '#FFCDD2', '#EF9A9A', '#E57373', '#EF5350', '#F44336', '#E53935', '#D32F2F', '#C62828', '#B71C1C'],
-  blue: ['#E3F2FD', '#BBDEFB', '#90CAF9', '#64B5F6', '#42A5F5', '#2196F3', '#1E88E5', '#1976D2', '#1565C0', '#0D47A1'],
-  teal: ['#B2DFDB', '#4DB6AC', '#009688', '#00796B', '#004D40'],
-  purple: ['#E1BEE7', '#BA68C8', '#9C27B0', '#7B1FA2', '#4A148C']
-}
-
-const transformValue = (data, statePopulation, total) => {
+function transformValue(data, statePopulation, total) {
   if (state.us1ChartRenderOption === 'percentOfPopulation') {
     return data / statePopulation
   } else {
@@ -133,13 +67,33 @@ const transformValue = (data, statePopulation, total) => {
   }
 }
 
-const generateScale = (chartGroup) => {
+function generateScale(chartGroup) {
   if (state.us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
     return [0, getTopValue(chartGroup)]
   }
 }
+
+const getTopValue = (group) => d3.max(group.all(), d => {
+  if (state.us1ChartRenderOption === 'percentOfPopulation') {
+    return d.value.sampled_total_sales / d.value.state_population
+  } else {
+    return d.value.sampled_total_sales
+  }
+})
+
+// ****************************************************
+// Create Event Listeners for HTML
+// ****************************************************
+document.getElementById('reset-button').addEventListener('click', () => {
+  lineChart.filterAll()
+  rangeChart.filterAll()
+  dc.redrawAll()
+})
+
+document.getElementById('renderOption1').addEventListener('change', changeRenderOption)
+document.getElementById('renderOption2').addEventListener('change', changeRenderOption)
 
 window.onresize = (event) => {
   lineChart.width(getWidth('line-chart') - 50).height(getHeight('line-chart') - 50).transitionDuration(0)
@@ -158,13 +112,9 @@ window.onresize = (event) => {
   lineChart.transitionDuration(750)
 }
 
-const getTopValue = (group) => d3.max(group.all(), d => {
-  if (state.us1ChartRenderOption === 'percentOfPopulation') {
-    return d.value.sampled_total_sales / d.value.state_population
-  } else {
-    return d.value.sampled_total_sales
-  }
-})
+// ****************************************************
+// Render Logic for Chart
+// ****************************************************
 
 const renderCharts = (data) => {
   const title1GeoData = data[0].filter(data => {
@@ -173,6 +123,9 @@ const renderCharts = (data) => {
   })
 
   const title1Circulation = data[1]
+
+  const specialNote = notes[state.selectedMagazine.toUpperCase()]
+  document.getElementById('special-note').textContent = specialNote
 
   title1Circulation.forEach(d => {
     d.actual_issue_date = new Date(d.actual_issue_date)
@@ -302,7 +255,7 @@ const renderCharts = (data) => {
         </div>
         `
       })
-    // TODO: create a 'default' issue data object to reset?
+
     function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) {
       return {
         date: key ? key.format('mmm dd, yyyy') : '-',
@@ -381,7 +334,7 @@ const renderCharts = (data) => {
   function formatNum(num) {
     if (state.us1ChartRenderOption === 'percentOfPopulation') {
       // console.log(num, (num*100).toFixed(3))
-      return `${(num*100).toFixed(3)}%`
+      return `${(num*100).toFixed(2)}%`
     } else {
       return toMetric(num)
     }
@@ -394,6 +347,7 @@ const renderCharts = (data) => {
         }
 
         us1Chart.legendables = () => {
+          console.log('running legendables', state.isClicked)
           if (state.isClicked) {
             const range = us1Chart.colors().range()
             const domain = us1Chart.colorDomain()
@@ -454,7 +408,7 @@ const renderCharts = (data) => {
                   }
                 })
                 .renderTitle(false)
-                .legend(dc.legend().x(getWidth('us1-chart') / 100).y(getHeight('us1-chart')).horizontal(true).itemHeight(5))
+                .legend(dc.legend().x(getWidth('us1-chart') / 110).y(getHeight('us1-chart') + 10).horizontal(true).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
                 .on('renderlet.click', (chart) => {
                   chart.selectAll('path').on('click', () => {})
                 })
@@ -494,7 +448,9 @@ const renderCharts = (data) => {
           .on('renderlet.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
               state.isClicked = true
-              document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
+              const clearFilterButton = document.getElementById('clearIssueFilterButton')
+              clearFilterButton.style.visibility = 'visible'
+              clearFilterButton.addEventListener('click', lineChart.unClick)
               renderIssueData(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)

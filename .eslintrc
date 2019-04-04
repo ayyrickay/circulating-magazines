@@ -20,9 +20,10 @@
   },
 
   "parserOptions": {
-        "ecmaVersion": 2017
+        "ecmaVersion": 2017,
+        "sourceType": "module"
   },
-  
+
   "env": {
     "browser": true,     // browser global variables.
     "node": false,        // Node.js global variables and Node.js-specific rules.
