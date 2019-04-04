@@ -1,3 +1,4 @@
+import { notes, colorScales, stateCodes } from '../data/special-notes.js'
 const numberFormat = d3.format(".2f")
 const titleSelector = document.getElementById('title-select')
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
@@ -55,76 +56,6 @@ const getHeight = (element) => {
   }
 }
 
-
-const stateCodes = {
-  'Alabama': 'AL',
-  'Alaska': 'AK',
-  'American Samoa': 'AS',
-  'Arizona': 'AZ',
-  'Arkansas': 'AR',
-  'California': 'CA',
-  'Colorado': 'CO',
-  'Connecticut': 'CT',
-  'Delaware': 'DE',
-  'District Of Columbia': 'DC',
-  'Federated States Of Micronesia': 'FM',
-  'Florida': 'FL',
-  'Georgia': 'GA',
-  'Guam': 'GU',
-  'Hawaii': 'HI',
-  'Idaho': 'ID',
-  'Illinois': 'IL',
-  'Indiana': 'IN',
-  'Iowa': 'IA',
-  'Kansas': 'KS',
-  'Kentucky': 'KY',
-  'Louisiana': 'LA',
-  'Maine': 'ME',
-  'Marshall Islands': 'MH',
-  'Maryland': 'MD',
-  'Massachusetts': 'MA',
-  'Michigan': 'MI',
-  'Minnesota': 'MN',
-  'Mississippi': 'MS',
-  'Missouri': 'MO',
-  'Montana': 'MT',
-  'Nebraska': 'NE',
-  'Nevada': 'NV',
-  'New Hampshire': 'NH',
-  'New Jersey': 'NJ',
-  'New Mexico': 'NM',
-  'New York': 'NY',
-  'North Carolina': 'NC',
-  'North Dakota': 'ND',
-  'Northern Mariana Islands': 'MP',
-  'Ohio': 'OH',
-  'Oklahoma': 'OK',
-  'Oregon': 'OR',
-  'Palau': 'PW',
-  'Pennsylvania': 'PA',
-  'Puerto Rico': 'PR',
-  'Rhode Island': 'RI',
-  'South Carolina': 'SC',
-  'South Dakota': 'SD',
-  'Tennessee': 'TN',
-  'Texas': 'TX',
-  'Utah': 'UT',
-  'Vermont': 'VT',
-  'Virgin Islands': 'VI',
-  'Virginia': 'VA',
-  'Washington': 'WA',
-  'West Virginia': 'WV',
-  'Wisconsin': 'WI',
-  'Wyoming': 'WY'
-}
-
-const colorScales = {
-  red: ['#FFEBEE', '#FFCDD2', '#EF9A9A', '#E57373', '#EF5350', '#F44336', '#E53935', '#D32F2F', '#C62828', '#B71C1C'],
-  blue: ['#E3F2FD', '#BBDEFB', '#90CAF9', '#64B5F6', '#42A5F5', '#2196F3', '#1E88E5', '#1976D2', '#1565C0', '#0D47A1'],
-  teal: ['#B2DFDB', '#4DB6AC', '#009688', '#00796B', '#004D40'],
-  purple: ['#E1BEE7', '#BA68C8', '#9C27B0', '#7B1FA2', '#4A148C']
-}
-
 const transformValue = (data, statePopulation, total) => {
   if (state.us1ChartRenderOption === 'percentOfPopulation') {
     return data / statePopulation
@@ -173,6 +104,9 @@ const renderCharts = (data) => {
   })
 
   const title1Circulation = data[1]
+
+  const specialNote = notes[state.selectedMagazine.toUpperCase()]
+  document.getElementById('special-note').textContent = specialNote
 
   title1Circulation.forEach(d => {
     d.actual_issue_date = new Date(d.actual_issue_date)
