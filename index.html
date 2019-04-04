@@ -27,21 +27,14 @@
             <div class='chart-header'>
               <h3 class="title">Circulation Data</h3>
               <div class="switch-field">
-                <button id="clearIssueFilterButton"
-                  class="switch-button"
-                  value="Clear Issue"
-                  onClick="javascript:lineChart.unClick()"
-                 >Clear Issue </button>
-                 <button
-                  class="reset switch-button"
-                  onClick="javascript:lineChart.filterAll();rangeChart.filterAll();dc.redrawAll();"
-                  style="display: none;">
+                <button id="clearIssueFilterButton" class="switch-button">
+                 Clear Issue
+                </button>
+                <button id="reset-button" class="reset switch-button" style="display:none;">
                     Reset Chart
                 </button>
-                <!-- <label for="clearIssueFilterButton" id="clearIssueLabel">Clear Issue</label> -->
               </div>
             </div>
-            <div class="clearfix"></div>
         </div>
         <div id="range-chart"></div>
         <p class="caption">Click and drag on the lower chart to select a time range.</p>
@@ -55,21 +48,13 @@
                 id="renderOption1"
                 name="chart-group"
                 value="rawData"
-                onChange="changeRenderOption(event)"
                 checked />
               <label for="renderOption1">Raw Data</label>
 
               <input type="radio" id="renderOption2"
                name="chart-group" value="percentOfPopulation"
-               onChange="changeRenderOption(event)"
                />
               <label for="renderOption2">% of Population</label>
-
-              <!-- <button id="clearIssueFilterButton"
-                value="Clear Issue"
-                onClick="javascript:lineChart.unClick()"
-               >Clear Issue </button> -->
-              <!-- <label for="clearIssueFilterButton" id="clearIssueLabel">Clear Issue</label> -->
             </div>
           </div>
           <div class="choropleth-data">

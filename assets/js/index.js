@@ -1,4 +1,4 @@
-import { notes, colorScales, stateCodes } from '../data/special-notes.js'
+import { notes, colorScales, stateCodes } from '../data/constants.js'
 const numberFormat = d3.format(".2f")
 const titleSelector = document.getElementById('title-select')
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
@@ -27,7 +27,10 @@ new Awesomplete(titleSelector, {
   }
 })
 
-const changeRenderOption = (event) => {
+// ****************************************************
+// Helper Functions
+// ****************************************************
+function changeRenderOption(event) {
   if (state.isClicked) {
     state.us1ChartRenderOption = event.target.value
     us1Chart.customUpdate()
@@ -38,7 +41,7 @@ const changeRenderOption = (event) => {
   }
 }
 
-const getWidth = (element) => {
+function getWidth(element) {
   if (document.getElementById(element)) {
     return document.getElementById('line-chart').offsetWidth
   } else {
@@ -47,7 +50,7 @@ const getWidth = (element) => {
   }
 }
 
-const getHeight = (element) => {
+function getHeight(element) {
   if (document.getElementById(element)) {
     return document.getElementById('line-chart').offsetHeight
   } else {
@@ -56,7 +59,7 @@ const getHeight = (element) => {
   }
 }
 
-const transformValue = (data, statePopulation, total) => {
+function transformValue(data, statePopulation, total) {
   if (state.us1ChartRenderOption === 'percentOfPopulation') {
     return data / statePopulation
   } else {
@@ -64,13 +67,33 @@ const transformValue = (data, statePopulation, total) => {
   }
 }
 
-const generateScale = (chartGroup) => {
+function generateScale(chartGroup) {
   if (state.us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
     return [0, getTopValue(chartGroup)]
   }
 }
+
+const getTopValue = (group) => d3.max(group.all(), d => {
+  if (state.us1ChartRenderOption === 'percentOfPopulation') {
+    return d.value.sampled_total_sales / d.value.state_population
+  } else {
+    return d.value.sampled_total_sales
+  }
+})
+
+// ****************************************************
+// Create Event Listeners for HTML
+// ****************************************************
+document.getElementById('reset-button').addEventListener('click', () => {
+  lineChart.filterAll()
+  rangeChart.filterAll()
+  dc.redrawAll()
+})
+
+document.getElementById('renderOption1').addEventListener('change', changeRenderOption)
+document.getElementById('renderOption2').addEventListener('change', changeRenderOption)
 
 window.onresize = (event) => {
   lineChart.width(getWidth('line-chart') - 50).height(getHeight('line-chart') - 50).transitionDuration(0)
@@ -89,13 +112,9 @@ window.onresize = (event) => {
   lineChart.transitionDuration(750)
 }
 
-const getTopValue = (group) => d3.max(group.all(), d => {
-  if (state.us1ChartRenderOption === 'percentOfPopulation') {
-    return d.value.sampled_total_sales / d.value.state_population
-  } else {
-    return d.value.sampled_total_sales
-  }
-})
+// ****************************************************
+// Render Logic for Chart
+// ****************************************************
 
 const renderCharts = (data) => {
   const title1GeoData = data[0].filter(data => {
@@ -236,7 +255,7 @@ const renderCharts = (data) => {
         </div>
         `
       })
-    // TODO: create a 'default' issue data object to reset?
+
     function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) {
       return {
         date: key ? key.format('mmm dd, yyyy') : '-',
@@ -315,7 +334,7 @@ const renderCharts = (data) => {
   function formatNum(num) {
     if (state.us1ChartRenderOption === 'percentOfPopulation') {
       // console.log(num, (num*100).toFixed(3))
-      return `${(num*100).toFixed(3)}%`
+      return `${(num*100).toFixed(2)}%`
     } else {
       return toMetric(num)
     }
@@ -328,6 +347,7 @@ const renderCharts = (data) => {
         }
 
         us1Chart.legendables = () => {
+          console.log('running legendables', state.isClicked)
           if (state.isClicked) {
             const range = us1Chart.colors().range()
             const domain = us1Chart.colorDomain()
@@ -388,7 +408,7 @@ const renderCharts = (data) => {
                   }
                 })
                 .renderTitle(false)
-                .legend(dc.legend().x(getWidth('us1-chart') / 100).y(getHeight('us1-chart')).horizontal(true).itemHeight(5))
+                .legend(dc.legend().x(getWidth('us1-chart') / 110).y(getHeight('us1-chart') + 10).horizontal(true).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
                 .on('renderlet.click', (chart) => {
                   chart.selectAll('path').on('click', () => {})
                 })
@@ -428,7 +448,9 @@ const renderCharts = (data) => {
           .on('renderlet.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
               state.isClicked = true
-              document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
+              const clearFilterButton = document.getElementById('clearIssueFilterButton')
+              clearFilterButton.style.visibility = 'visible'
+              clearFilterButton.addEventListener('click', lineChart.unClick)
               renderIssueData(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)

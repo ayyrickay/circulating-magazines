@@ -94,8 +94,8 @@ export const stateCodes = {
 }
 
 export const colorScales = {
-  red: ['#FFEBEE', '#FFCDD2', '#EF9A9A', '#E57373', '#EF5350', '#F44336', '#E53935', '#D32F2F', '#C62828', '#B71C1C'],
-  blue: ['#E3F2FD', '#BBDEFB', '#90CAF9', '#64B5F6', '#42A5F5', '#2196F3', '#1E88E5', '#1976D2', '#1565C0', '#0D47A1'],
+  red: ['#F8BBD0', '#F06292', '#E91E63', '#C2185B', '#880E4F'],
+  blue: ['#BBDEFB', '#64B5F6', '#2196F3', '#1976D2', '#0D47A1'],
   teal: ['#B2DFDB', '#4DB6AC', '#009688', '#00796B', '#004D40'],
   purple: ['#E1BEE7', '#BA68C8', '#9C27B0', '#7B1FA2', '#4A148C']
 }
