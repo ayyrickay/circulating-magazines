@@ -19,57 +19,116 @@
     <div class="select-field">
       <label for="title-select">Search Titles:</label>
       <input name="title-select" id="title-select">
-      <!-- <select name="title-select" id="title-select">
-        <option value="saev" selected>Saturday Evening Post</option>
-        <option value="neyo">New Yorker</option>
-        <option value="vafa">Vanity Fair</option>
-        <option value="blma">Black Mask</option>
-        <option value="coll">Collier's</option>
-        <option value="amma">American Magazine</option>
-        <option value="stsm">Street & Smith Combination</option>
-        <option value="adve">Adventure</option>
-      </select> -->
-    </div>
-    <div class="switch-field">
-      <input
-        type="radio"
-        id="renderOption1"
-        name="chart-group-1"
-        value="rawData"
-        onChange="changeRenderOption(event)"
-        checked />
-      <label for="renderOption1">Raw Data</label>
-
-      <input type="radio" id="renderOption2"
-       name="chart-group-1" value="percentOfPopulation"
-       onChange="changeRenderOption(event)"
-       />
-      <label for="renderOption2">% of Population</label>
-
-      <button id="clearIssueFilterButton"
-        value="Clear Issue"
-        onClick="javascript:lineChart1.unClick()"
-       >Clear Issue </button>
-      <!-- <label for="clearIssueFilterButton" id="clearIssueLabel">Clear Issue</label> -->
     </div>
 
-    <div class="chart-group-1">
-      <h3 id="magazine-title-1"></h3>
-      <div class="charts">
-        <div class="line-chart-container">
-          <div id="line-chart-1">
-              <h3 class="chart-title">By Circulation</h3>
-              <a class="reset" href="javascript:lineChart1.filterAll();lineChart1Range.filterAll();dc.redrawAll();" style="display: none;">reset</a>
-
-              <div class="clearfix"></div>
-          </div>
-          <div id="line-chart-1-range"></div>
-          <p class="caption">Click and drag on the lower chart to select a time range.</p>
-        </div>
-        <div id="us1-chart">
-            <h3 class="chart-title">Circulation By State</h3>
+    <div class="charts">
+      <div class="line-chart-container">
+        <div id="line-chart">
+            <div class='chart-header'>
+              <h3 class="title">Circulation Data</h3>
+              <div class="switch-field">
+                <button id="clearIssueFilterButton"
+                  class="switch-button"
+                  value="Clear Issue"
+                  onClick="javascript:lineChart.unClick()"
+                 >Clear Issue </button>
+                 <button
+                  class="reset switch-button"
+                  onClick="javascript:lineChart.filterAll();rangeChart.filterAll();dc.redrawAll();"
+                  style="display: none;">
+                    Reset Chart
+                </button>
+                <!-- <label for="clearIssueFilterButton" id="clearIssueLabel">Clear Issue</label> -->
+              </div>
+            </div>
             <div class="clearfix"></div>
         </div>
+        <div id="range-chart"></div>
+        <p class="caption">Click and drag on the lower chart to select a time range.</p>
+      </div>
+      <div class='choropleth-container'>
+          <div class="chart-header">
+            <h3 class="title">Circulation By State</h3>
+            <div class="switch-field">
+              <input
+                type="radio"
+                id="renderOption1"
+                name="chart-group"
+                value="rawData"
+                onChange="changeRenderOption(event)"
+                checked />
+              <label for="renderOption1">Raw Data</label>
+
+              <input type="radio" id="renderOption2"
+               name="chart-group" value="percentOfPopulation"
+               onChange="changeRenderOption(event)"
+               />
+              <label for="renderOption2">% of Population</label>
+
+              <!-- <button id="clearIssueFilterButton"
+                value="Clear Issue"
+                onClick="javascript:lineChart.unClick()"
+               >Clear Issue </button> -->
+              <!-- <label for="clearIssueFilterButton" id="clearIssueLabel">Clear Issue</label> -->
+            </div>
+          </div>
+          <div class="choropleth-data">
+            <div id="us1-chart">
+            </div>
+            <div class="clearfix"></div>
+            <div class="render-data">
+              <div class="tooltip-data flex sb">
+                <div class="half-em-margin">
+                  <h4 class="key">Date</h4>
+                  <p id="issue-date"> - </p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">State</h4>
+                  <p id="selected-state">-</p>
+                </div>
+              </div>
+              <div class="tooltip-data flex sb">
+                <div class="half-em-margin">
+                  <h4 class="key">Total Circulation</h4>
+                  <p id="total-circulation">-</p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Price</h4>
+                  <p id="issue-price">-</p>
+                </div>
+              </div>
+              <div class="tooltip-data flex sb">
+                <div class="half-em-margin">
+                  <h4 class="key">Editor</h4>
+                  <p id="issue-editor">-</p>
+                </div>
+              </div>
+              <div class="tooltip-data">
+                <h4 class="key">Publishing Company</h4>
+                <p id="issue-publisher">-</p>
+              </div>
+              <div class="tooltip-data flex sb">
+                <div class="half-em-margin">
+                  <h4 class="key">Mail Subscriptions</h4>
+                  <p id="mail-subscriptions"> - </p>
+                 </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Single Copy Sales</h4>
+                  <p id="single-copy-sales"> - </p>
+                 </div>
+              </div>
+              <div class="tooltip-data flex sb">
+                <div class="half-em-margin">
+                  <h4 class="key">% of State Population</h4>
+                  <p id="state-pop"> -</p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">% of Total Circulation</h4>
+                  <p id="percent-of-total">-</p>
+                </div>
+              </div>
+            </div>
+          </div>
       </div>
     </div>
 

@@ -1,17 +1,18 @@
 const numberFormat = d3.format(".2f")
 const titleSelector = document.getElementById('title-select')
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
-const lineChart1 = dc.lineChart("#line-chart-1")
-const lineChart1Range = dc.barChart("#line-chart-1-range")
+const lineChart = dc.lineChart("#line-chart")
+const rangeChart = dc.barChart("#range-chart")
 const us1Width = document.getElementById('us1-chart').offsetWidth
 const us1Height = document.getElementById('us1-chart').offsetHeight
-const lineChart1Width = document.getElementById('line-chart-1').offsetWidth
-const lineChart1Height = document.getElementById('line-chart-1').offsetHeight
+const lineChartWidth = document.getElementById('line-chart').offsetWidth
+const lineChartHeight = document.getElementById('line-chart').offsetHeight
 const state = {
   isClicked: false,
   selectedMagazine: 'saev',
   totalSalesByState: null,
-  us1ChartRenderOption: 'rawData'
+  us1ChartRenderOption: 'rawData',
+  title1Data: {}
 }
 
 titleSelector.value = 'Saturday Evening Post'
@@ -38,7 +39,7 @@ const changeRenderOption = (event) => {
 
 const getWidth = (element) => {
   if (document.getElementById(element)) {
-    return document.getElementById('line-chart-1').offsetWidth
+    return document.getElementById('line-chart').offsetWidth
   } else {
     console.error(`No element found with ID ${element}`)
     return 0
@@ -47,7 +48,7 @@ const getWidth = (element) => {
 
 const getHeight = (element) => {
   if (document.getElementById(element)) {
-    return document.getElementById('line-chart-1').offsetHeight
+    return document.getElementById('line-chart').offsetHeight
   } else {
     console.error(`No element found with ID ${element}`)
     return 0
@@ -141,17 +142,20 @@ const generateScale = (chartGroup) => {
 }
 
 window.onresize = (event) => {
-  lineChart1.width(getWidth('line-chart-1') - 50).height(getHeight('line-chart-1') - 50).transitionDuration(0)
+  lineChart.width(getWidth('line-chart') - 50).height(getHeight('line-chart') - 50).transitionDuration(0)
+  rangeChart.width(getWidth('line-chart') - 50).transitionDuration(0)
   us1Chart
     .projection(d3.geoAlbersUsa()
-      .scale(Math.min(getWidth('us1-chart') * 2.5, getHeight('us1-chart') * 1.7))
-      .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
+      .scale(Math.min(getWidth('us1-chart') * 4, getHeight('us1-chart') * 1.8))
+      .translate([getWidth('us1-chart') / 6, getHeight('us1-chart') / 2.4])
     )
     .transitionDuration(0)
+    .width(getWidth('us1-chart') - 200)
+    .height(getHeight('us1-chart') - 50)
 
   dc.renderAll()
   us1Chart.transitionDuration(750)
-  lineChart1.transitionDuration(750)
+  lineChart.transitionDuration(750)
 }
 
 const getTopValue = (group) => d3.max(group.all(), d => {
@@ -273,43 +277,13 @@ const renderCharts = (data) => {
         <h4 class="key">State</h4>
         <p>${key}</p>
       </div>
+      <div class="tooltip-data">
       ${state.isClicked ?
-        `<div class="tooltip-data flex sb">
-        ${sampled_mail_subscriptions ?
-          `<div class="half-em-margin">
-            <h4 class="key">Mail Subscriptions</h4>
-            <p> ${renderNumberWithCommas(sampled_mail_subscriptions)}</p>
-           </div>
-          `
-        : ''}
-        ${sampled_single_copy_sales ?
-          `<div class="half-em-margin">
-            <h4 class="key">Single Copy Sales</h4>
-            <p> ${renderNumberWithCommas(sampled_single_copy_sales)}</p>
-           </div>`
-        : ''}
-        </div>
-        <div class="tooltip-data flex sb">
-          <div class="half-em-margin">
-            <h4 class="key">% of State Population</h4>
-            <p> ${(sampled_total_sales/state_population * 100).toFixed(3)}%</p>
-          </div>
-          <div class="half-em-margin">
-            <h4 class="key">% of Total Circulation</h4>
-            <p> ${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%</p>
-          </div>
-        </div>
-        <div class="tooltip-data">
-          <h4 class="key">Total Circulation</h4>
-          <p> ${generateMapTipText(sampled_total_sales, state_population)}</p>
-        </div>
-        `
-        : `
-          <div class="tooltip-data">
-            <h4 class="key">Data</h4>
-            <p> Please select a specific issue for more detailed data</p>
-          </div>
-        `}
+        '' :
+        `<h4 class="key">Data</h4>
+         <p> Please select a specific issue for more detailed data</p>`
+        }
+      </div>
       `
     })
 
@@ -326,22 +300,35 @@ const renderCharts = (data) => {
           <h4 class="key">Circulation</h4>
           <p> ${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues</p>
         </div>
-        <div class="tooltip-data flex sb">
-          <div class="half-em-margin">
-            <h4 class="key">Editor</h4>
-            <p>${editor ? editor : 'Unkown'}</p>
-          </div>
-          <div class="half-em-margin">
-            <h4 class="key">Price</h4>
-            <p>${price ? price : 'Unknown'}</p>
-          </div>
-        </div>
-        <div class="tooltip-data">
-          <h4 class="key">Publishing Company</h4>
-          <p>${publishing_company ? publishing_company : 'Unkown'}</p>
-        </div>
         `
       })
+    // TODO: create a 'default' issue data object to reset?
+    function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) {
+      return {
+        date: key ? key.format('mmm dd, yyyy') : '-',
+        issue_circulation: issue_circulation ? `${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues` : '-',
+        price: price ? price : '-',
+        publishing_company: publishing_company ? publishing_company : '-',
+        editor: editor ? editor : '-'
+      }
+    }
+
+    function renderIssueData(data) {
+      if (data) {
+        const {date, issue_circulation, publishing_company, price, editor} = prettifyIssueData(data)
+        document.getElementById('total-circulation').textContent = issue_circulation
+        document.getElementById('issue-date').textContent = date
+        document.getElementById('issue-publisher').textContent = publishing_company
+        document.getElementById('issue-price').textContent = price
+        document.getElementById('issue-editor').textContent = editor
+      } else {
+        document.getElementById('total-circulation').textContent = '-'
+        document.getElementById('issue-date').textContent = '-'
+        document.getElementById('issue-publisher').textContent = '-'
+        document.getElementById('issue-price').textContent = '-'
+        document.getElementById('issue-editor').textContent = '-'
+      }
+    }
 
     const resetCharts = () => {
       samplePeriodEnd.filter(null)
@@ -351,6 +338,7 @@ const renderCharts = (data) => {
       document.getElementById('renderOption2').checked = false
       document.getElementById('clearIssueFilterButton').style.visibility = 'hidden'
       state.us1ChartRenderOption = 'rawData'
+      renderIssueData()
 
       lineTip.hide()
 
@@ -365,12 +353,82 @@ const renderCharts = (data) => {
                     generateCharts()
                 }, false)
 
+  function toMetric(x) {
+  	if (isNaN(x)) {return x}
+
+  	if(x < 1000) {
+  		return x;
+  	}
+
+  	if(x < 1000000) {
+  		return Math.round(x/1000) + "k";
+  	}
+  	if( x < 10000000) {
+  		return (x/1000000).toFixed(2) + "M";
+  	}
+
+  	if(x < 1000000000) {
+  		return Math.round(x/1000000) + "M";
+  	}
+
+  	if(x < 1000000000000) {
+  		return Math.round(x/1000000000) + "B";
+  	}
+
+  	return "1T+";
+  }
+
+  function formatNum(num) {
+    if (state.us1ChartRenderOption === 'percentOfPopulation') {
+      // console.log(num, (num*100).toFixed(3))
+      return `${(num*100).toFixed(3)}%`
+    } else {
+      return toMetric(num)
+    }
+  }
+
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
           us1Chart.group(salesByState)
           us1Chart.redraw()
         }
-        us1Chart.width(us1Width)
+
+        us1Chart.legendables = () => {
+          if (state.isClicked) {
+            const range = us1Chart.colors().range()
+            const domain = us1Chart.colorDomain()
+            const step = (domain[1] - domain[0]) / range.length
+            let val = domain[0]
+            return range.map(function (d, i) {
+                const legendable = {name: `${formatNum(val)} - ${formatNum(val+step)}`, chart: us1Chart}
+                legendable.color = us1Chart.colorCalculator()(val)
+                val += step
+                return legendable
+            })
+          } else {
+            return []
+          }
+        }
+
+        function renderGeoData(data) {
+          if (data && state.isClicked) {
+            const selectedItem = salesByState.all().filter(item => item.key === data.properties.name)[0]
+            const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = selectedItem
+            document.getElementById('selected-state').textContent = key
+            document.getElementById('mail-subscriptions').textContent = `${renderNumberWithCommas(sampled_mail_subscriptions)}`
+            document.getElementById('single-copy-sales').textContent = `${renderNumberWithCommas(sampled_single_copy_sales)}`
+            document.getElementById('state-pop').textContent = `${(sampled_total_sales/state_population * 100).toFixed(3)}%`
+            document.getElementById('percent-of-total').textContent = `${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%`
+          } else {
+            document.getElementById('selected-state').textContent = '-'
+            document.getElementById('mail-subscriptions').textContent = '-'
+            document.getElementById('single-copy-sales').textContent = '-'
+            document.getElementById('state-pop').textContent = '-'
+            document.getElementById('percent-of-total').textContent = '-'
+          }
+        }
+
+        us1Chart.width(us1Width - 20)
                 .height(us1Height)
                 .dimension(stateRegion)
                 .group(salesByState)
@@ -383,8 +441,8 @@ const renderCharts = (data) => {
                   return d.properties.name
                 })
                 .projection(d3.geoAlbersUsa()
-                  .scale(Math.min(getWidth('us1-chart') * 2.5, getHeight('us1-chart') * 1.7))
-                  .translate([getWidth('us1-chart') / 2.5, getHeight('us1-chart') / 2.5])
+                  .scale(Math.min(getWidth('us1-chart') * 4, getHeight('us1-chart') * 1.8))
+                  .translate([getWidth('us1-chart') / 6, getHeight('us1-chart') / 2.4])
                 )
                 .valueAccessor(kv => {
                   if (kv.value !== undefined) {
@@ -396,14 +454,15 @@ const renderCharts = (data) => {
                   }
                 })
                 .renderTitle(false)
+                .legend(dc.legend().x(getWidth('us1-chart') / 100).y(getHeight('us1-chart')).horizontal(true).itemHeight(5))
                 .on('renderlet.click', (chart) => {
                   chart.selectAll('path').on('click', () => {})
                 })
                 .on('pretransition', (chart) => {
                     chart.selectAll('path')
                         .call(mapTip)
-                        .on('mouseover.mapTip', mapTip.show)
-                        .on('mouseout.mapTip', mapTip.hide);
+                        .on('mouseover.mapTip', d => {mapTip.show(d); renderGeoData(d)})
+                        .on('mouseout.mapTip', d => {mapTip.hide(d); renderGeoData(null)});
                 })
                 .on('filtered', (chart, filter) => {
                   // console.log(chart.filters())
@@ -416,15 +475,15 @@ const renderCharts = (data) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
                 });
 
-        lineChart1.unClick = resetCharts
+        lineChart.unClick = resetCharts
 
-        lineChart1
-          .width(lineChart1Width-50)
-          .height(lineChart1Height-50)
+        lineChart
+          .width(lineChartWidth-50)
+          .height(lineChartHeight-50)
           .xUnits(d3.timeMonths)
-          .margins({ top: 10, right: 10, bottom: 20, left: 80 })
+          .margins({ top: 10, right: 10, bottom: 50, left: 80 })
           .dimension(title1Dates)
-          .rangeChart(lineChart1Range)
+          .rangeChart(rangeChart)
           .group(title1CirculationByDate)
           .colors(colorScales.blue[colorScales.blue.length - 1])
           .elasticY(true)
@@ -436,7 +495,7 @@ const renderCharts = (data) => {
             chart.selectAll('circle').on('click', (selected) => {
               state.isClicked = true
               document.getElementById('clearIssueFilterButton').style.visibility = 'visible'
-              lineTip.show(selected)
+              renderIssueData(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
@@ -479,17 +538,17 @@ const renderCharts = (data) => {
               chart.selectAll('circle')
                   .call(lineTip)
                   .on('mouseover.lineTip', (selected) => {
-                    state.isClicked ? null : lineTip.show(selected)
+                    lineTip.show(selected)
                   })
                   .on('mouseout.lineTip', (selected) => {
-                    state.isClicked ? null : lineTip.hide(selected)
+                    lineTip.hide(selected)
                   })
           })
           .render()
 
 
-        lineChart1Range
-          .width(lineChart1Width-50)
+        rangeChart
+          .width(lineChartWidth-50)
           .height(40)
           .margins({ top: 10, right: 10, bottom: 20, left: 80 })
           .dimension(title1Dates)
@@ -502,7 +561,7 @@ const renderCharts = (data) => {
           .xUnits(() => 200)
           .y(d3.scaleLinear().domain([0, d3.max(title1CirculationByDate.all(), d => d.value.issue_circulation)]))
 
-        lineChart1Range.yAxis().ticks(0)
+        rangeChart.yAxis().ticks(0)
 
         // Establish global chart filter method
         dc.chartRegistry.list().forEach((chart) => {
