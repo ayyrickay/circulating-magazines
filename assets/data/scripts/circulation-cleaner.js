@@ -53,6 +53,6 @@ console.log(cleanCirculation[0])
 console.log('final length of array is', cleanCirculation.length)
 
 fs.writeFile(path.join(__dirname, `/../clean/${args[0].toLowerCase()}-circulation.json`), JSON.stringify(cleanCirculation), 'utf8', (err) => {
-  if (err) throw err
+  if (err) {throw err}
   console.log('Successfully joined data')
 })

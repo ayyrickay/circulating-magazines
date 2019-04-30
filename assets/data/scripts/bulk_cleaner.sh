@@ -1,6 +1,6 @@
-## Clean and parse geodata from raw JSON
+## Clean and parse circulation from raw JSON
 # for filename in rawData/*-Circulation.json; do
-#     # Add geodata header to beginning of file
+#     # Add circulation header to beginning of file
 #     ex -s -c '1i|module.exports.circulationData = ' -c x "$filename"
 #     # rename files
 #     mv -- "$filename" "${filename%.json}.js"

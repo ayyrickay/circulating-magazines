@@ -1,4 +1,6 @@
 import { notes, colorScales, stateCodes } from '../data/constants.js'
+import {renderIssueData, renderGeoData} from './helpers/DataRender.js'
+import {renderNumberWithCommas, toMetric, formatNum} from './helpers/DataFormat.js'
 const numberFormat = d3.format(".2f")
 const titleSelector = document.getElementById('title-select')
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
@@ -12,7 +14,7 @@ const state = {
   isClicked: false,
   selectedMagazine: 'saev',
   totalSalesByState: null,
-  us1ChartRenderOption: 'rawData',
+  us1ChartRenderOption: 'percentOfPopulation',
   title1Data: {}
 }
 
@@ -23,7 +25,7 @@ new Awesomplete(titleSelector, {
   list: [{"value":"adve","label":"Adventure"},{"value":"amma","label":"American Magazine"},{"value":"amme","label":"American Mercury"},{"value":"atmo","label":"Atlantic Monthly"},{"value":"batm","label":"Batman"},{"value":"blbo","label":"Blue Book Magazine"},{"value":"blma","label":"Black Mask"},{"value":"cent","label":"Century"},{"value":"clma","label":"Clayton Magazines"},{"value":"clmab","label":"Clayton Magazines (bimonthly)"},{"value":"coll","label":"Collier's"},{"value":"defi","label":"Dell Fiction Group"},{"value":"dial","label":"Dial"},{"value":"fiho","label":"Fiction House"},{"value":"foru","label":"Forum"},{"value":"harp","label":"Harper's"},{"value":"judg","label":""},{"value":"libe","label":"Liberty"},{"value":"muns","label":"Munsey Combination"},{"value":"neyo","label":"New Yorker"},{"value":"play","label":"Playboy"},{"value":"popu","label":"Popular Publications"},{"value":"saev","label":"Saturday Evening Post"},{"value":"scma","label":"Scribner's Magazine"},{"value":"shst","label":"Short Stories"},{"value":"smse","label":"Smart Set"},{"value":"stsm","label":"Street and Smith Combination"},{"value":"supe","label":"Superman"},{"value":"thgr","label":"Thrilling Group"},
   {"value":"vafa","label":"Vanity Fair"}],
   replace: (suggestion) => {
-    titleSelector.value = suggestion.label;
+    titleSelector.value = suggestion.label
   }
 })
 
@@ -100,8 +102,8 @@ window.onresize = (event) => {
   rangeChart.width(getWidth('line-chart') - 50).transitionDuration(0)
   us1Chart
     .projection(d3.geoAlbersUsa()
-      .scale(Math.min(getWidth('us1-chart') * 4, getHeight('us1-chart') * 1.8))
-      .translate([getWidth('us1-chart') / 6, getHeight('us1-chart') / 2.4])
+      .scale(Math.min(getWidth('us1-chart') * 1.5, getHeight('us1-chart') * 1.5))
+      .translate([getWidth('us1-chart') / 8, getHeight('us1-chart') / 2.5])
     )
     .transitionDuration(0)
     .width(getWidth('us1-chart') - 200)
@@ -124,9 +126,6 @@ const renderCharts = (data) => {
 
   const title1Circulation = data[1]
 
-  const specialNote = notes[state.selectedMagazine.toUpperCase()]
-  document.getElementById('special-note').textContent = specialNote
-
   title1Circulation.forEach(d => {
     d.actual_issue_date = new Date(d.actual_issue_date)
   })
@@ -135,31 +134,38 @@ const renderCharts = (data) => {
   const circulation = crossfilter(title1Circulation)
 
   // Reducer function for raw geodata
-  const geoReducerAdd = (p, v) => {
+  function geoReducerAdd(p, v) {
+    // console.log(p.sampled_issue_date, v.sampled_issue_date, state.periodEnding, state.periodStart)
     ++p.count
     p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
     p.sampled_single_copy_sales += v.sampled_single_copy_sales
     p.sampled_total_sales += v.sampled_total_sales
     p.state_population = v.state_population // only valid for population viz
+    p.sampled_issue_date = v.sampled_issue_date <= state.periodEnding && v.sampled_issue_date >= state.periodStart ? v.sampled_issue_date : p.sampled_issue_date
     return p
   }
-  const geoReducerRemove = (p, v) => {
+
+  function geoReducerRemove(p, v) {
     --p.count
     p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
     p.sampled_single_copy_sales -= v.sampled_single_copy_sales
     p.sampled_total_sales -= v.sampled_total_sales
     p.state_population = v.state_population // only valid for population viz
+    p.sampled_issue_date = v.sampled_issue_date <= state.periodEnding && v.sampled_issue_date >= state.periodStart ? v.sampled_issue_date : p.sampled_issue_date
     return p
   }
 
   // generic georeducer
-  const geoReducerDefault = () => ({
-    count: 0,
-    sampled_mail_subscriptions: 0,
-    sampled_single_copy_sales: 0,
-    sampled_total_sales: 0,
-    state_population: 0
-  })
+  function geoReducerDefault() {
+    return {
+      count: 0,
+      sampled_mail_subscriptions: 0,
+      sampled_single_copy_sales: 0,
+      sampled_total_sales: 0,
+      state_population: 0,
+      sampled_issue_date: null
+    }
+  }
 
   // Generate dimensions and groups for choropleth
   const stateRegion = geodata.dimension((d) => d.state_region)
@@ -170,42 +176,58 @@ const renderCharts = (data) => {
 
   // generate dimensions and groups for line/range chart
   const title1Dates = circulation.dimension(d => d.actual_issue_date)
-  const genericCirculationGroup = title1Dates.group().all()
   const title1CirculationByDate = title1Dates.group().reduce((p, v) => {
-        ++p.count
-        p.issue_circulation += v.issue_circulation
-        p.price = v.price
-        p.type = v.type
-        p.publishing_company = v.publishing_company
-        p.titles_included = v.titles_included
-        p.editor = v.editor
-        return p
+      ++p.count
+      p.canonical_title = v.canonical_title
+      p.issue_circulation += v.issue_circulation
+      p.price = v.price
+      p.type = v.type
+      p.publishing_company = v.publishing_company
+      p.titles_included = v.titles_included
+      p.editor = v.editor
+      p.circulation_quality = v.circulation_quality
+      return p
     },
     /* callback for when data is removed from the current filter results */
     (p, v) => {
-        --p.count;
-        p.issue_circulation -= v.issue_circulation
-        p.price = v.price
-        p.type = v.type
-        p.publishing_company = v.publishing_company
-        p.titles_included = v.titles_included
-        p.editor = v.editor
-        return p
+      --p.count
+      p.canonical_title = v.canonical_title
+      p.issue_circulation -= v.issue_circulation
+      p.price = v.price
+      p.type = v.type
+      p.publishing_company = v.publishing_company
+      p.titles_included = v.titles_included
+      p.editor = v.editor
+      p.circulation_quality = v.circulation_quality
+      return p
     },
     /* initialize p */
     () => ({
-            count: 0,
-            issue_circulation: 0,
-            price: "",
-            type: "",
-            publishing_company: "",
-            titles_included: "",
-            editor: ""
-        })
+      canonical_title:"",
+      count: 0,
+      issue_circulation: 0,
+      price: "",
+      type: "",
+      publishing_company: "",
+      titles_included: "",
+      editor: "",
+      circulation_quality: ""
+    })
     )
 
-  const renderNumberWithCommas = (number) => {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+
+  // ****************************************************
+  // Static Render Data
+  // ****************************************************
+  const specialNote = notes[state.selectedMagazine.toUpperCase()]
+  const {canonical_title, titles_included} = title1CirculationByDate.all()[0].value
+  document.getElementById('special-note').textContent = specialNote
+  document.getElementById('non-canon-title').textContent = canonical_title
+  if (titles_included === "") {
+    document.getElementById('titles-included').parentNode.classList.add('hide')
+  } else {
+    document.getElementById('titles-included').parentNode.classList.remove('hide')
+    document.getElementById('titles-included').textContent = titles_included.split('@').join(', ')
   }
 
   const generateMapTipText = (sampled_total_sales, state_population) => {
@@ -256,33 +278,6 @@ const renderCharts = (data) => {
         `
       })
 
-    function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor}}}) {
-      return {
-        date: key ? key.format('mmm dd, yyyy') : '-',
-        issue_circulation: issue_circulation ? `${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues` : '-',
-        price: price ? price : '-',
-        publishing_company: publishing_company ? publishing_company : '-',
-        editor: editor ? editor : '-'
-      }
-    }
-
-    function renderIssueData(data) {
-      if (data) {
-        const {date, issue_circulation, publishing_company, price, editor} = prettifyIssueData(data)
-        document.getElementById('total-circulation').textContent = issue_circulation
-        document.getElementById('issue-date').textContent = date
-        document.getElementById('issue-publisher').textContent = publishing_company
-        document.getElementById('issue-price').textContent = price
-        document.getElementById('issue-editor').textContent = editor
-      } else {
-        document.getElementById('total-circulation').textContent = '-'
-        document.getElementById('issue-date').textContent = '-'
-        document.getElementById('issue-publisher').textContent = '-'
-        document.getElementById('issue-price').textContent = '-'
-        document.getElementById('issue-editor').textContent = '-'
-      }
-    }
-
     const resetCharts = () => {
       samplePeriodEnd.filter(null)
       state.isClicked = false
@@ -306,40 +301,6 @@ const renderCharts = (data) => {
                     generateCharts()
                 }, false)
 
-  function toMetric(x) {
-  	if (isNaN(x)) {return x}
-
-  	if(x < 1000) {
-  		return x;
-  	}
-
-  	if(x < 1000000) {
-  		return Math.round(x/1000) + "k";
-  	}
-  	if( x < 10000000) {
-  		return (x/1000000).toFixed(2) + "M";
-  	}
-
-  	if(x < 1000000000) {
-  		return Math.round(x/1000000) + "M";
-  	}
-
-  	if(x < 1000000000000) {
-  		return Math.round(x/1000000000) + "B";
-  	}
-
-  	return "1T+";
-  }
-
-  function formatNum(num) {
-    if (state.us1ChartRenderOption === 'percentOfPopulation') {
-      // console.log(num, (num*100).toFixed(3))
-      return `${(num*100).toFixed(2)}%`
-    } else {
-      return toMetric(num)
-    }
-  }
-
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         us1Chart.customUpdate = () => {
           us1Chart.group(salesByState)
@@ -347,13 +308,14 @@ const renderCharts = (data) => {
         }
 
         us1Chart.legendables = () => {
+          console.log(getWidth('us1-chart'), us1Width)
           if (state.isClicked) {
             const range = us1Chart.colors().range()
             const domain = us1Chart.colorDomain()
             const step = (domain[1] - domain[0]) / range.length
             let val = domain[0]
             return range.map(function (d, i) {
-                const legendable = {name: `${formatNum(val)} - ${formatNum(val+step)}`, chart: us1Chart}
+                const legendable = {name: `${formatNum(val, state)} - ${formatNum(val+step, state)}`, chart: us1Chart}
                 legendable.color = us1Chart.colorCalculator()(val)
                 val += step
                 return legendable
@@ -363,25 +325,7 @@ const renderCharts = (data) => {
           }
         }
 
-        function renderGeoData(data) {
-          if (data && state.isClicked) {
-            const selectedItem = salesByState.all().filter(item => item.key === data.properties.name)[0]
-            const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = selectedItem
-            document.getElementById('selected-state').textContent = key
-            document.getElementById('mail-subscriptions').textContent = `${renderNumberWithCommas(sampled_mail_subscriptions)}`
-            document.getElementById('single-copy-sales').textContent = `${renderNumberWithCommas(sampled_single_copy_sales)}`
-            document.getElementById('state-pop').textContent = `${(sampled_total_sales/state_population * 100).toFixed(3)}%`
-            document.getElementById('percent-of-total').textContent = `${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%`
-          } else {
-            document.getElementById('selected-state').textContent = '-'
-            document.getElementById('mail-subscriptions').textContent = '-'
-            document.getElementById('single-copy-sales').textContent = '-'
-            document.getElementById('state-pop').textContent = '-'
-            document.getElementById('percent-of-total').textContent = '-'
-          }
-        }
-
-        us1Chart.width(us1Width - 20)
+        us1Chart.width(us1Width + 16)
                 .height(us1Height)
                 .dimension(stateRegion)
                 .group(salesByState)
@@ -394,8 +338,8 @@ const renderCharts = (data) => {
                   return d.properties.name
                 })
                 .projection(d3.geoAlbersUsa()
-                  .scale(Math.min(getWidth('us1-chart') * 4, getHeight('us1-chart') * 1.8))
-                  .translate([getWidth('us1-chart') / 6, getHeight('us1-chart') / 2.4])
+                  .scale(Math.min(getWidth('us1-chart') * 1.5, getHeight('us1-chart') * 1.5))
+                  .translate([getWidth('us1-chart') / 8, getHeight('us1-chart') / 2.5])
                 )
                 .valueAccessor(kv => {
                   if (kv.value !== undefined) {
@@ -407,15 +351,15 @@ const renderCharts = (data) => {
                   }
                 })
                 .renderTitle(false)
-                .legend(dc.legend().x(getWidth('us1-chart') / 110).y(getHeight('us1-chart') - 10).horizontal(true).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
+                .legend(dc.legend().x(getWidth('us1-chart') / 4.5).y(getHeight('us1-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
                 .on('renderlet.click', (chart) => {
                   chart.selectAll('path').on('click', () => {})
                 })
                 .on('pretransition', (chart) => {
                     chart.selectAll('path')
                         .call(mapTip)
-                        .on('mouseover.mapTip', d => {mapTip.show(d); renderGeoData(d)})
-                        .on('mouseout.mapTip', d => {mapTip.hide(d); renderGeoData(null)});
+                        .on('mouseover.mapTip', d => {mapTip.show(d); renderGeoData(d, state, salesByState.all().filter(item => item.key === d.properties.name)[0])})
+                        .on('mouseout.mapTip', d => {mapTip.hide(d); renderGeoData(null, state)});
                 })
                 .on('filtered', (chart, filter) => {
                   // console.log(chart.filters())
@@ -426,7 +370,7 @@ const renderCharts = (data) => {
                 })
                 .on("preRedraw", (chart) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
-                });
+                })
 
         lineChart.unClick = resetCharts
 
@@ -455,7 +399,10 @@ const renderCharts = (data) => {
                 const currentIssueDate = new Date(selected.x)
                 const periodEnding = new Date(d)
                 const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
-                return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+                if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
+                  Object.assign(state, {currentIssueDate, periodStart, periodEnding})
+                  return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+                }
               })
 
               state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
@@ -470,7 +417,10 @@ const renderCharts = (data) => {
                   const currentIssueDate = new Date(selected.x)
                   const periodEnding = new Date(d)
                   const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
-                  return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+                  if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
+                    Object.assign(state, {currentIssueDate, periodStart, periodEnding})
+                    return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+                  }
                 })
 
                 state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
