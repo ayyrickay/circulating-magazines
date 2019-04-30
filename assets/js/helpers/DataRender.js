@@ -5,13 +5,15 @@ import {renderNumberWithCommas, prettifyIssueData} from './DataFormat.js'
 // ****************************************************
 export function renderIssueData(data) {
   if (data) {
-    const {date, issue_circulation, publishing_company, price, editor, magazine_title, titles_included} = prettifyIssueData(data)
+    const {date, issue_circulation, publishing_company, price, editor, magazine_title, titles_included, circulation_quality} = prettifyIssueData(data)
     document.getElementById('total-circulation').textContent = issue_circulation
     document.getElementById('issue-date').textContent = date
     document.getElementById('issue-publisher').textContent = publishing_company
     document.getElementById('issue-price').textContent = price
     document.getElementById('issue-editor').textContent = editor
+    document.getElementById('circulation-quality').textContent = `(${circulation_quality})`
   } else {
+    document.getElementById('circulation-quality').textContent = ''
     document.getElementById('total-circulation').textContent = '-'
     document.getElementById('issue-date').textContent = '-'
     document.getElementById('issue-publisher').textContent = '-'
