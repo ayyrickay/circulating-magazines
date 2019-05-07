@@ -141,17 +141,23 @@ const renderCharts = (data) => {
     p.sampled_single_copy_sales += v.sampled_single_copy_sales
     p.sampled_total_sales += v.sampled_total_sales
     p.state_population = v.state_population // only valid for population viz
-    p.sampled_issue_date = v.sampled_issue_date <= state.periodEnding && v.sampled_issue_date >= state.periodStart ? v.sampled_issue_date : p.sampled_issue_date
+    p.sampled_issue_date = v.sampled_issue_date
     return p
   }
 
   function geoReducerRemove(p, v) {
+    const currDate = new Date(v.sampled_issue_date)
+    // if(currDate.getFullYear() === 1921) {
+    //   console.log(currDate)
+    // }
+    currDate <= state.periodEnding && currDate >= state.periodStart ? console.log(v.sampled_issue_date, p.sampled_issue_date) : null
+    const dateToRender = currDate <= state.periodEnding && currDate >= state.periodStart ? v.sampled_issue_date : p.sampled_issue_date
     --p.count
     p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
     p.sampled_single_copy_sales -= v.sampled_single_copy_sales
     p.sampled_total_sales -= v.sampled_total_sales
     p.state_population = v.state_population // only valid for population viz
-    p.sampled_issue_date = v.sampled_issue_date <= state.periodEnding && v.sampled_issue_date >= state.periodStart ? v.sampled_issue_date : p.sampled_issue_date
+    p.sampled_issue_date = dateToRender
     return p
   }
 
@@ -163,7 +169,7 @@ const renderCharts = (data) => {
       sampled_single_copy_sales: 0,
       sampled_total_sales: 0,
       state_population: 0,
-      sampled_issue_date: null
+      sampled_issue_date: ""
     }
   }
 
@@ -227,7 +233,6 @@ const renderCharts = (data) => {
     document.getElementById('titles-included').parentNode.classList.add('hide')
   } else {
     document.getElementById('titles-included').parentNode.classList.remove('hide')
-    document.getElementById('titles-included').textContent = titles_included.split('@').join(', ')
   }
 
   const generateMapTipText = (sampled_total_sales, state_population) => {
@@ -242,15 +247,10 @@ const renderCharts = (data) => {
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      const selectedItem = salesByState.all().filter(item => item.key === d.properties.name)[0]
-      if(!selectedItem) {
-        return `<div class="tooltip-data"></div>`
-      }
-      const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = selectedItem
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
-        <p>${key}</p>
+        <p>${d.properties.name}</p>
       </div>
       <div class="tooltip-data">
       ${state.isClicked ?
@@ -308,7 +308,6 @@ const renderCharts = (data) => {
         }
 
         us1Chart.legendables = () => {
-          console.log(getWidth('us1-chart'), us1Width)
           if (state.isClicked) {
             const range = us1Chart.colors().range()
             const domain = us1Chart.colorDomain()
@@ -407,7 +406,7 @@ const renderCharts = (data) => {
 
               state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
               us1Chart.colorDomain(generateScale(salesByState))
-              us1Chart.redraw()
+              us1Chart.customUpdate()
             })
           })
           .on('renderlet.mouseover', (chart) => {
@@ -426,7 +425,7 @@ const renderCharts = (data) => {
                 state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
                 us1Chart.colorDomain(generateScale(salesByState))
-                us1Chart.redraw()
+                us1Chart.customUpdate()
               }
             })
 

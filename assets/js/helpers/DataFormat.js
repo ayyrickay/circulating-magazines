@@ -5,15 +5,16 @@ export const renderNumberWithCommas = (number) => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
-export function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor, magazine_title, circulation_quality}}}) {
+export function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor, magazine_title, circulation_quality, titles_included}}}) {
   return {
-    circulation_quality: circulation_quality ? circulation_quality : null,
+    circulation_quality: circulation_quality ? `(${circulation_quality})` : null,
     date: key ? key.format('mmm dd, yyyy') : '-',
     issue_circulation: issue_circulation ? `${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues` : '-',
     price: price ? price : '-',
     publishing_company: publishing_company ? publishing_company : '-',
     editor: editor ? editor : '-',
-    magazine_title: magazine_title ? magazine_title : '-'
+    magazine_title: magazine_title ? magazine_title : '-',
+    titles_included: titles_included ? titles_included.split('@').join(', ') : '-'
   }
 }
 
