@@ -11,7 +11,7 @@ export function renderIssueData(data) {
     document.getElementById('issue-publisher').textContent = publishing_company
     document.getElementById('issue-price').textContent = price
     document.getElementById('issue-editor').textContent = editor
-    document.getElementById('circulation-quality').textContent = circulation_quality
+    document.getElementById('circulation-quality').textContent = `(${circulation_quality})`
     document.getElementById('titles-included').textContent = titles_included
   } else {
     document.getElementById('circulation-quality').textContent = ''
@@ -20,14 +20,12 @@ export function renderIssueData(data) {
     document.getElementById('issue-publisher').textContent = '-'
     document.getElementById('issue-price').textContent = '-'
     document.getElementById('issue-editor').textContent = '-'
-    document.getElementById('titles_included') ? document.getElementById('titles_included').textContent = '-' : null
   }
 }
 
 export function renderGeoData(data, state, selectedItem) {
   if (data && state.isClicked && selectedItem) {
-    const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_issue_date, sampled_single_copy_sales, state_population}} = selectedItem
-    console.log(sampled_issue_date)
+    const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = selectedItem
     document.getElementById('selected-state').textContent = key
     document.getElementById('mail-subscriptions').textContent = `${renderNumberWithCommas(sampled_mail_subscriptions)}`
     document.getElementById('single-copy-sales').textContent = `${renderNumberWithCommas(sampled_single_copy_sales)}`

@@ -233,6 +233,7 @@ const renderCharts = (data) => {
     document.getElementById('titles-included').parentNode.classList.add('hide')
   } else {
     document.getElementById('titles-included').parentNode.classList.remove('hide')
+    document.getElementById('titles-included').textContent = titles_included.split('@').join(', ')
   }
 
   const generateMapTipText = (sampled_total_sales, state_population) => {
@@ -308,6 +309,7 @@ const renderCharts = (data) => {
         }
 
         us1Chart.legendables = () => {
+          console.log(getWidth('us1-chart'), us1Width)
           if (state.isClicked) {
             const range = us1Chart.colors().range()
             const domain = us1Chart.colorDomain()
