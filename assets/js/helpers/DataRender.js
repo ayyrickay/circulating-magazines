@@ -25,7 +25,7 @@ export function renderIssueData(data) {
 
 export function renderGeoData(data, state, selectedItem) {
   if (data && state.isClicked && selectedItem) {
-    const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_single_copy_sales, state_population}} = selectedItem
+    const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_issue_date, sampled_single_copy_sales, state_population}} = selectedItem
     document.getElementById('selected-state').textContent = key
     document.getElementById('mail-subscriptions').textContent = `${renderNumberWithCommas(sampled_mail_subscriptions)}`
     document.getElementById('single-copy-sales').textContent = `${renderNumberWithCommas(sampled_single_copy_sales)}`
