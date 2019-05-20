@@ -9,12 +9,11 @@
 //     # All other fields can be combined
 //
 //     # Object destructuring would be helpful here, but maybe possible in python?
-
 const args = process.argv.slice(2)
+const csv = require('csvtojson')
 const path = require('path')
-const circulationdataPath = path.join(__dirname, `/../rawData/${args[0]}-Circulation.js`)
+const circulationdataPath = path.join(__dirname, `${args[0]}`)
 const fs = require('fs')
-const circulationData = require(circulationdataPath)
 
 const getDecade = (date) => {
   const year = date.getFullYear()
@@ -25,34 +24,45 @@ const getDecade = (date) => {
 
 console.log(circulationdataPath)
 
-const cleanCirculation = circulationData.circulationData
-  .filter(issue => issue.circulation)
-  .map(match => {
-    return {
-        actual_issue_date: new Date(match.year, match.month-1, `${match.day || 1}`),
-        issue_circulation: match.circulation,
-        circulation_quality: match.circulation_quality,
-        circulation_source: match.circulation_source,
-        price: match.price,
-        publishing_company: match.publisher,
-        publishing_group: match.publishing_group,
-        titles_included: match.titles_included,
-        editor: match.editor,
-        magazine_id: match.magazine_id,
-        type_id: match.type_id,
-        magazine_title: match.magazine,
-        canonical_title: match.canonical_title
-      }
+async function getCirculationJson () {
+  const circulationData = await csv({
+    ignoreEmpty: true,
+    trim: true
+  }).fromFile(circulationdataPath)
+
+  console.log(circulationdataPath, circulationData)
+
+  const cleanCirculation = circulationData
+    .filter(issue => issue.circulation)
+    .map(match => {
+      return {
+          actual_issue_date: new Date(match.year, match.month-1, `${match.day || 1}`),
+          issue_circulation: match.circulation,
+          circulation_quality: match.circulation_quality,
+          circulation_source: match.circulation_source,
+          price: match.price,
+          publishing_company: match.publisher,
+          publishing_group: match.publishing_group,
+          titles_included: match.titles_included,
+          editor: match.editor,
+          magazine_id: match.magazine_id,
+          type_id: match.type_id,
+          magazine_title: match.magazine,
+          canonical_title: match.canonical_title
+        }
+  }
+    )
+
+
+  console.log('initial length is', circulationData.length)
+  console.log(circulationData[0])
+  console.log(cleanCirculation[0])
+  console.log('final length of array is', cleanCirculation.length)
+
+  fs.writeFile(path.join(__dirname, `/../clean/${args[0].split('/')[2].split('-')[0].toLowerCase()}-circulation.json`), JSON.stringify(cleanCirculation), 'utf8', (err) => {
+    if (err) {throw err}
+    console.log('Successfully joined data')
+  })
 }
-  )
 
-
-console.log('initial length is', circulationData.circulationData.length)
-console.log(circulationData.circulationData[0])
-console.log(cleanCirculation[0])
-console.log('final length of array is', cleanCirculation.length)
-
-fs.writeFile(path.join(__dirname, `/../clean/${args[0].toLowerCase()}-circulation.json`), JSON.stringify(cleanCirculation), 'utf8', (err) => {
-  if (err) {throw err}
-  console.log('Successfully joined data')
-})
+getCirculationJson()
