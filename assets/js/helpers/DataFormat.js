@@ -6,10 +6,11 @@ export const renderNumberWithCommas = (number) => {
 }
 
 export function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor, magazine_title, circulation_quality, titles_included}}}) {
+  console.log(issue_circulation)
   return {
-    circulation_quality: circulation_quality ? `(${circulation_quality})` : null,
+    circulation_quality: circulation_quality ? `${circulation_quality}` : null,
     date: key ? key.format('mmm dd, yyyy') : '-',
-    issue_circulation: issue_circulation ? `${issue_circulation.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} issues` : '-',
+    issue_circulation: issue_circulation ? `${parseInt(issue_circulation).toString().split( /(?=(?:\d{3})+(?:\.|$))/g ).join( "," )} issues` : '-',
     price: price ? price : '-',
     publishing_company: publishing_company ? publishing_company : '-',
     editor: editor ? editor : '-',
