@@ -22,15 +22,11 @@ const getDecade = (date) => {
   return yearArray.join('')
 }
 
-console.log(circulationdataPath)
-
 async function getCirculationJson () {
   const circulationData = await csv({
     ignoreEmpty: true,
     trim: true
   }).fromFile(circulationdataPath)
-
-  console.log(circulationdataPath, circulationData)
 
   const cleanCirculation = circulationData
     .filter(issue => issue.circulation)
