@@ -6,7 +6,6 @@ export const renderNumberWithCommas = (number) => {
 }
 
 export function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor, magazine_title, circulation_quality, titles_included}}}) {
-  console.log(issue_circulation)
   return {
     circulation_quality: circulation_quality ? `${circulation_quality}` : null,
     date: key ? key.format('mmm dd, yyyy') : '-',

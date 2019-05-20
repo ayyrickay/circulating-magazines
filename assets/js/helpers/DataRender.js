@@ -25,14 +25,14 @@ export function renderIssueData(data) {
 
 export function renderGeoData(data, state, selectedItem) {
   if (data && state.isClicked && selectedItem) {
-    const {key, value: {sampled_total_sales, sampled_mail_subscriptions, sampled_issue_date, sampled_single_copy_sales, state_population}} = selectedItem
+    const {key, value: {date_counts, sampled_total_sales, sampled_mail_subscriptions, sampled_issue_date, sampled_single_copy_sales, state_population}} = selectedItem
     document.getElementById('selected-state').textContent = key
     document.getElementById('mail-subscriptions').textContent = `${renderNumberWithCommas(sampled_mail_subscriptions)}`
     document.getElementById('single-copy-sales').textContent = `${renderNumberWithCommas(sampled_single_copy_sales)}`
     document.getElementById('state-circulation').textContent = `${renderNumberWithCommas(sampled_total_sales)}`
     document.getElementById('state-pop').textContent = `${(sampled_total_sales/state_population * 100).toFixed(3)}%`
     document.getElementById('percent-of-total').textContent = `${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%`
-    document.getElementById('geo-issue-date').textContent = new Date(sampled_issue_date).format('mmm dd, yyyy')
+    document.getElementById('geo-issue-date').textContent = new Date(+Object.keys(date_counts)[0]).format('mmm dd, yyyy')
   } else {
     document.getElementById('selected-state').textContent = '-'
     document.getElementById('mail-subscriptions').textContent = '-'

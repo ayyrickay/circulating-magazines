@@ -39,8 +39,6 @@ const getPopulation = (state, year) => {
   }
 }
 
-console.log(geodataPath)
-
 async function getGeodataJson () {
   const geodata = await csv({
     ignoreEmpty: true,

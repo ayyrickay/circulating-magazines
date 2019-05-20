@@ -135,8 +135,9 @@ const renderCharts = (data) => {
 
   // Reducer function for raw geodata
   function geoReducerAdd(p, v) {
-    // console.log(p.sampled_issue_date, v.sampled_issue_date, state.periodEnding, state.periodStart)
+    const canonDate = new Date(v.sampled_issue_date).getTime()
     ++p.count
+    p.date_counts[canonDate] = (p.date_counts[canonDate] || 0) + 1
     p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
     p.sampled_single_copy_sales += v.sampled_single_copy_sales
     p.sampled_total_sales += v.sampled_total_sales
@@ -146,18 +147,13 @@ const renderCharts = (data) => {
   }
 
   function geoReducerRemove(p, v) {
-    const currDate = new Date(v.sampled_issue_date)
-    // if(currDate.getFullYear() === 1921) {
-    //   console.log(currDate)
-    // }
-    currDate <= state.periodEnding && currDate >= state.periodStart ? console.log(v.sampled_issue_date, p.sampled_issue_date) : null
-    const dateToRender = currDate <= state.periodEnding && currDate >= state.periodStart ? v.sampled_issue_date : p.sampled_issue_date
+    const canonDate = new Date(v.sampled_issue_date).getTime()
     --p.count
+    if(!--p.date_counts[canonDate]) { delete p.date_counts[canonDate] }
     p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
     p.sampled_single_copy_sales -= v.sampled_single_copy_sales
     p.sampled_total_sales -= v.sampled_total_sales
     p.state_population = v.state_population // only valid for population viz
-    p.sampled_issue_date = dateToRender
     return p
   }
 
@@ -169,7 +165,8 @@ const renderCharts = (data) => {
       sampled_single_copy_sales: 0,
       sampled_total_sales: 0,
       state_population: 0,
-      sampled_issue_date: ""
+      sampled_issue_date: "",
+      date_counts: {}
     }
   }
 
@@ -309,7 +306,6 @@ const renderCharts = (data) => {
         }
 
         us1Chart.legendables = () => {
-          console.log(getWidth('us1-chart'), us1Width)
           if (state.isClicked) {
             const range = us1Chart.colors().range()
             const domain = us1Chart.colorDomain()
