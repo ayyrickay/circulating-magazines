@@ -61,14 +61,6 @@ function getHeight(element) {
   }
 }
 
-function transformValue(data, statePopulation, total) {
-  if (state.us1ChartRenderOption === 'percentOfPopulation') {
-    return data / statePopulation
-  } else {
-    return data
-  }
-}
-
 function generateScale(chartGroup) {
   if (state.us1ChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
@@ -280,10 +272,10 @@ const renderCharts = (data) => {
       samplePeriodEnd.filter(null)
       state.isClicked = false
 
-      document.getElementById('renderOption1').checked = true
-      document.getElementById('renderOption2').checked = false
+      document.getElementById('renderOption1').checked = false
+      document.getElementById('renderOption2').checked = true
       document.getElementById('clearIssueFilterButton').style.visibility = 'hidden'
-      state.us1ChartRenderOption = 'rawData'
+      state.us1ChartRenderOption = 'percentOfPopulation'
       renderIssueData()
 
       lineTip.hide()
