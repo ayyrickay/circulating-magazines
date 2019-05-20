@@ -105,7 +105,7 @@ body {
 	flex-flow: column;
 	/* height: 25em; */
 	width: 50%;
-	margin: 1em 0em;
+	margin: 1em auto;
 	background-color: #fff;
   border: rgba(0,0,0,.3) 1px solid;
   box-shadow: 0 4px 4px 0 rgba(0,0,0,0.2);
