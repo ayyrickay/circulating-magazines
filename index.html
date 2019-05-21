@@ -27,11 +27,15 @@
             <div class='chart-header'>
               <h3 class="title">Circulation Data</h3>
               <div class="switch-field">
-                <button id="clearIssueFilterButton" class="switch-button">
+                <button id="clearIssueFilterButton" class="switch-button hide">
                  Clear Issue
                 </button>
                 <button id="reset-button" class="reset switch-button" style="display:none;">
                     Reset Chart
+                </button>
+                <!-- TODO: really bad practice here, but I don't know an easier way to maintain styling while hiding buttons yet -->
+                <button class="switch-button" style="visibility:hidden;">
+                    This is a hidden button
                 </button>
               </div>
             </div>
