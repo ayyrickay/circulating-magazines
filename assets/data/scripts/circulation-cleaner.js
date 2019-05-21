@@ -33,7 +33,7 @@ async function getCirculationJson () {
     .map(match => {
       return {
           actual_issue_date: new Date(match.year, match.month-1, `${match.day || 1}`),
-          issue_circulation: match.circulation,
+          issue_circulation: parseInt(match.circulation),
           circulation_quality: match.circulation_quality,
           circulation_source: match.circulation_source,
           price: match.price,
