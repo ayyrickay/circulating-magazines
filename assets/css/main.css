@@ -276,10 +276,6 @@ body {
   font-size: .85em;
 }
 
-#clearIssueFilterButton {
-	visibility: hidden;
-}
-
 .switch-button {
   color: #fff;
   font-size: 14px;

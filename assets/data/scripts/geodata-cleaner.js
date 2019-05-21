@@ -45,7 +45,6 @@ async function getGeodataJson () {
     trim: true
   }).fromFile(geodataPath)
 
-  console.log(geodataPath, geodata)
   const revisedGeodata = geodata.filter(data => data.mail_subscriptions > -1 && data.single_copy_sales > -1).map(data => {
     const [month, day, year] = data.period_ending.split('/')
     if (!year) return console.log(data)
@@ -58,7 +57,7 @@ async function getGeodataJson () {
       state_population: getPopulation(data.state_region, periodEnding),
       sampled_mail_subscriptions: parseInt(data.mail_subscriptions),
       sampled_single_copy_sales: parseInt(data.single_copy_sales),
-      sampled_total_sales: parseInt(data.mail_subscriptions + data.single_copy_sales),
+      sampled_total_sales: parseInt(data.mail_subscriptions) + parseInt(data.single_copy_sales),
       sampled_issue_date: data.issue_date,
       magazine_title: data.title,
       title_code: data.title_code

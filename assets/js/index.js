@@ -274,7 +274,7 @@ const renderCharts = (data) => {
 
       document.getElementById('renderOption1').checked = false
       document.getElementById('renderOption2').checked = true
-      document.getElementById('clearIssueFilterButton').style.visibility = 'hidden'
+      document.getElementById('clearIssueFilterButton').classList.add('hide')
       state.us1ChartRenderOption = 'percentOfPopulation'
       renderIssueData()
 
@@ -366,7 +366,7 @@ const renderCharts = (data) => {
         lineChart
           .width(lineChartWidth-50)
           .height(lineChartHeight-50)
-          .xUnits(d3.timeMonths)
+          .xUnits(d3.timeYears)
           .margins({ top: 10, right: 10, bottom: 50, left: 80 })
           .dimension(title1Dates)
           .rangeChart(rangeChart)
@@ -374,14 +374,14 @@ const renderCharts = (data) => {
           .colors(colorScales.blue[colorScales.blue.length - 1])
           .elasticY(true)
           .brushOn(false)
-          .valueAccessor(d => d.value.issue_circulation)
+          .valueAccessor(d => parseInt(d.value.issue_circulation))
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
           .renderTitle(false)
           .on('renderlet.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
               state.isClicked = true
               const clearFilterButton = document.getElementById('clearIssueFilterButton')
-              clearFilterButton.style.visibility = 'visible'
+              clearFilterButton.classList.remove('hide')
               clearFilterButton.addEventListener('click', lineChart.unClick)
               renderIssueData(selected)
               samplePeriodEnd.filter(d => {
