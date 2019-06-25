@@ -383,6 +383,7 @@ const renderCharts = (data) => {
                       renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
                     }
                   })
+<<<<<<< HEAD
                 })
                 .on('filtered.geodata', (chart, filter) => {
                   if(chart.filter() === null) {
@@ -391,6 +392,9 @@ const renderCharts = (data) => {
                     clearGeoFilterButton.classList.add('hide')
                   }
                 })
+=======
+                } )
+>>>>>>> 9538b5ba625c85ba4bf64c31cac2772e50b44993
                 .on("preRender", (chart) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
                 })
