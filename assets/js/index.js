@@ -11,7 +11,8 @@ const us1Height = document.getElementById('us1-chart').offsetHeight
 const lineChartWidth = document.getElementById('line-chart').offsetWidth
 const lineChartHeight = document.getElementById('line-chart').offsetHeight
 const state = {
-  isClicked: false,
+  circulationClicked: false,
+  geoClicked: false,
   selectedMagazine: 'saev',
   totalSalesByState: null,
   us1ChartRenderOption: 'percentOfPopulation',
@@ -33,7 +34,7 @@ new Awesomplete(titleSelector, {
 // Helper Functions
 // ****************************************************
 function changeRenderOption(event) {
-  if (state.isClicked) {
+  if (state.circulationClicked) {
     state.us1ChartRenderOption = event.target.value
     us1Chart.customUpdate()
     dc.redrawAll()
@@ -243,7 +244,7 @@ const renderCharts = (data) => {
         <p>${d.properties.name}</p>
       </div>
       <div class="tooltip-data">
-      ${state.isClicked ?
+      ${state.circulationClicked ?
         '' :
         `<h4 class="key">Data</h4>
          <p> Please select a specific issue for more detailed data</p>`
@@ -270,11 +271,12 @@ const renderCharts = (data) => {
 
     const resetCharts = () => {
       samplePeriodEnd.filter(null)
-      state.isClicked = false
+      state.circulationClicked = false
 
       document.getElementById('renderOption1').checked = false
       document.getElementById('renderOption2').checked = true
       document.getElementById('clearIssueFilterButton').classList.add('hide')
+      document.getElementById('clearGeoFilterButton').classList.add('hide')
       state.us1ChartRenderOption = 'percentOfPopulation'
       renderIssueData()
 
@@ -298,7 +300,7 @@ const renderCharts = (data) => {
         }
 
         us1Chart.legendables = () => {
-          if (state.isClicked) {
+          if (state.circulationClicked) {
             const range = us1Chart.colors().range()
             const domain = us1Chart.colorDomain()
             const step = (domain[1] - domain[0]) / range.length
@@ -341,18 +343,33 @@ const renderCharts = (data) => {
                 })
                 .renderTitle(false)
                 .legend(dc.legend().x(getWidth('us1-chart') / 4.5).y(getHeight('us1-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
-                .on('renderlet.click', (chart) => {
-                  chart.selectAll('path').on('click', () => {})
-                })
                 .on('pretransition', (chart) => {
                     chart.selectAll('path')
                         .call(mapTip)
-                        .on('mouseover.mapTip', d => {mapTip.show(d); renderGeoData(d, state, salesByState.all().filter(item => item.key === d.properties.name)[0])})
-                        .on('mouseout.mapTip', d => {mapTip.hide(d); renderGeoData(null, state)});
+                        .on('mouseover.mapTip', d => {
+                          if (!state.geoClicked) {
+                            mapTip.show(d)
+                            renderGeoData(d, state, salesByState.all().filter(item => item.key === d.properties.name)[0])
+                          }
+                        })
+                        .on('mouseout.mapTip', d => {
+                          mapTip.hide(d)
+                          if(!state.geoClicked) {
+                            renderGeoData(null, state)
+                          }
+                        });
                 })
-                .on('filtered', (chart, filter) => {
-                  // console.log(chart.filters())
-                  // console.log(filter)
+                .on('filtered.renderGeoData', (chart, filter) => {
+                  state.geoClicked = true
+                  const clearGeoFilterButton = document.getElementById('clearGeoFilterButton')
+                  clearGeoFilterButton.classList.remove('hide')
+                  clearGeoFilterButton.addEventListener('click', () => {
+                    renderGeoData(null, state)
+                    chart.filter(null)
+                    state.geoClicked = false
+                    clearGeoFilterButton.classList.add('hide')
+                  })
+                  renderGeoData(filter, state, salesByState.all().filter(item => item.key === filter)[0])
                 })
                 .on("preRender", (chart) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
@@ -379,7 +396,7 @@ const renderCharts = (data) => {
           .renderTitle(false)
           .on('renderlet.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
-              state.isClicked = true
+              state.circulationClicked = true
               const clearFilterButton = document.getElementById('clearIssueFilterButton')
               clearFilterButton.classList.remove('hide')
               clearFilterButton.addEventListener('click', lineChart.unClick)
@@ -401,7 +418,7 @@ const renderCharts = (data) => {
           })
           .on('renderlet.mouseover', (chart) => {
             chart.selectAll('circle').on('mouseover.hover', (selected) => {
-              if (!state.isClicked) {
+              if (!state.circulationClicked) {
                 samplePeriodEnd.filter(d => {
                   const currentIssueDate = new Date(selected.x)
                   const periodEnding = new Date(d)
@@ -420,7 +437,7 @@ const renderCharts = (data) => {
             })
 
             chart.selectAll('circle').on('mouseleave.hover', (selected) => {
-              if (!state.isClicked) {
+              if (!state.circulationClicked) {
                 samplePeriodEnd.filter(null)
                 us1Chart.colorDomain(generateScale(salesByState))
                 us1Chart.redraw()
