@@ -382,7 +382,14 @@ const renderCharts = (data) => {
                       renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
                     }
                   })
-                } )
+                })
+                .on('filtered.geodata', (chart, filter) => {
+                  if(chart.filter() === null) {
+                    renderGeoData(null, state)
+                    state.geoClicked = false
+                    clearGeoFilterButton.classList.add('hide')
+                  }
+                })
                 .on("preRender", (chart) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
                 })
