@@ -279,9 +279,11 @@ const renderCharts = (data) => {
       document.getElementById('clearGeoFilterButton').classList.add('hide')
       state.us1ChartRenderOption = 'percentOfPopulation'
       renderIssueData()
+      renderGeoData(null, state)
 
       lineTip.hide()
 
+      us1Chart.filter(null)
       us1Chart.customUpdate()
       us1Chart.colorDomain(generateScale(salesByState))
       us1Chart.redraw()
@@ -359,18 +361,28 @@ const renderCharts = (data) => {
                           }
                         });
                 })
-                .on('filtered.renderGeoData', (chart, filter) => {
-                  state.geoClicked = true
-                  const clearGeoFilterButton = document.getElementById('clearGeoFilterButton')
-                  clearGeoFilterButton.classList.remove('hide')
-                  clearGeoFilterButton.addEventListener('click', () => {
-                    renderGeoData(null, state)
-                    chart.filter(null)
-                    state.geoClicked = false
-                    clearGeoFilterButton.classList.add('hide')
+                .on('renderlet.click', chart => {
+                  chart.selectAll('path').on('click', selected => {
+                    const selectedState = selected.properties.name
+                    if(state.circulationClicked && state.geoClicked) {
+                      chart.filter(null)
+                      chart.filter(selectedState)
+                      renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
+                    } else if (state.circulationClicked) {
+                      state.geoClicked = true
+                      const clearGeoFilterButton = document.getElementById('clearGeoFilterButton')
+                      clearGeoFilterButton.classList.remove('hide')
+                      clearGeoFilterButton.addEventListener('click', () => {
+                        renderGeoData(null, state)
+                        chart.filter(null)
+                        state.geoClicked = false
+                        clearGeoFilterButton.classList.add('hide')
+                      })
+                      chart.filter(selectedState)
+                      renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
+                    }
                   })
-                  renderGeoData(filter, state, salesByState.all().filter(item => item.key === filter)[0])
-                })
+                } )
                 .on("preRender", (chart) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
                 })
