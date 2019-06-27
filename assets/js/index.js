@@ -120,7 +120,10 @@ const renderCharts = (data) => {
   const title1Circulation = data[1]
 
   title1Circulation.forEach(d => {
+    // TODO: Check for time zone issues
+    console.log('old', d.actual_issue_date)
     d.actual_issue_date = new Date(d.actual_issue_date)
+    console.log('new', d.actual_issue_date)
   })
 
   const geodata = crossfilter(title1GeoData)

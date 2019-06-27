@@ -32,7 +32,7 @@ async function getCirculationJson () {
     .filter(issue => issue.circulation)
     .map(match => {
       return {
-          actual_issue_date: new Date(match.year, match.month-1, `${match.day || 1}`),
+          actual_issue_date: Date.UTC(match.year, match.month-1, `${match.day || 1}`),
           issue_circulation: parseInt(match.circulation),
           circulation_quality: match.circulation_quality,
           circulation_source: match.circulation_source,
