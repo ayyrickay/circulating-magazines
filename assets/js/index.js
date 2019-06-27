@@ -280,6 +280,7 @@ const renderCharts = (data) => {
       document.getElementById('renderOption2').checked = true
       document.getElementById('clearIssueFilterButton').classList.add('hide')
       document.getElementById('clearGeoFilterButton').classList.add('hide')
+
       state.us1ChartRenderOption = 'percentOfPopulation'
       renderIssueData()
       renderGeoData(null, state)
