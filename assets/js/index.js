@@ -445,6 +445,7 @@ const renderCharts = (data) => {
                   const periodEnding = moment.utc(d)
                   const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
                   if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
+                    console.log(currentIssueDate.format(), periodStart.format(), periodEnding.format())
                     Object.assign(state, {currentIssueDate, periodStart, periodEnding})
                     return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
                   }

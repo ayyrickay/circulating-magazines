@@ -10,6 +10,8 @@ export function renderDateInUTC(date) {
 }
 
 export function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor, magazine_title, circulation_quality, titles_included}}}) {
+  // TODO: Check to see that date is still correct here
+  console.log(key)
   return {
     circulation_quality: circulation_quality ? `${circulation_quality}` : null,
     date: key ? key.format('MMM D, YYYY') : '-',
