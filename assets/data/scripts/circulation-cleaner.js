@@ -12,6 +12,7 @@
 const args = process.argv.slice(2)
 const csv = require('csvtojson')
 const path = require('path')
+const moment = require('moment')
 const circulationdataPath = path.join(__dirname, `${args[0]}`)
 const fs = require('fs')
 
@@ -32,7 +33,7 @@ async function getCirculationJson () {
     .filter(issue => issue.circulation)
     .map(match => {
       return {
-          actual_issue_date: Date.UTC(match.year, match.month-1, `${match.day || 1}`),
+          actual_issue_date: moment.utc({'year': match.year, 'month': match.month-1, 'day': `${match.day || 1}`}).format(),
           issue_circulation: parseInt(match.circulation),
           circulation_quality: match.circulation_quality,
           circulation_source: match.circulation_source,
