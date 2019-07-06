@@ -20,22 +20,23 @@ const args = process.argv.slice(2)
 const csv = require('csvtojson')
 const path = require('path')
 const geodataPath = path.join(__dirname, args[0])
+const moment = require('moment')
 const fs = require('fs')
 const populationData = require('./node_population_by_state')
 
 const getDecade = (date) => {
-  const year = date.getFullYear()
+  const year = date.get('year')
   const yearArray = year.toString().split('')
   yearArray[yearArray.length - 1] = 0
   return yearArray.join('')
 }
 
-const getPopulation = (state, year) => {
+const getPopulation = (state, date) => {
   const stateObject = populationData.populationData[state]
   if (!stateObject) {
     return stateObject
   } else {
-    return parseInt(stateObject[getDecade(year)])
+    return parseInt(stateObject[getDecade(date)])
   }
 }
 
@@ -48,11 +49,11 @@ async function getGeodataJson () {
   const revisedGeodata = geodata.filter(data => data.mail_subscriptions > -1 && data.single_copy_sales > -1).map(data => {
     const [month, day, year] = data.period_ending.split('/')
     if (!year) return console.log(data)
-    const periodEnding = new Date(year.indexOf('19') < -1 ? `19${year}` : year, parseInt(month)-1, day)
-    const periodStart = new Date(new Date(periodEnding).setMonth(periodEnding.getMonth() - 6))
+    const periodEnding = moment.utc({'year': year.indexOf('19') < -1 ? `19${year}` : year, month: parseInt(month)-1, 'day': day })
+    const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') - 5, 'day': 1})
     return {
-      sample_period_ending: periodEnding,
-      sample_period_start: periodStart,
+      sample_period_ending: periodEnding.format(),
+      sample_period_start: periodStart.format(),
       state_region: data.state_region,
       state_population: getPopulation(data.state_region, periodEnding),
       sampled_mail_subscriptions: parseInt(data.mail_subscriptions),

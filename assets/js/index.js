@@ -121,9 +121,7 @@ const renderCharts = (data) => {
 
   title1Circulation.forEach(d => {
     // TODO: Check for time zone issues
-    console.log('old', d.actual_issue_date)
-    d.actual_issue_date = new Date(d.actual_issue_date)
-    console.log('new', d.actual_issue_date)
+    d.actual_issue_date = moment.utc(d.actual_issue_date)
   })
 
   const geodata = crossfilter(title1GeoData)
@@ -131,7 +129,8 @@ const renderCharts = (data) => {
 
   // Reducer function for raw geodata
   function geoReducerAdd(p, v) {
-    const canonDate = new Date(v.sampled_issue_date).getTime()
+    const canonDate = moment.utc(new Date(v.sampled_issue_date)).valueOf()
+    if (p.state_population && v.state_population == null) console.log(p.state_population, v.state_population, p, v)
     ++p.count
     p.date_counts[canonDate] = (p.date_counts[canonDate] || 0) + 1
     p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
@@ -143,7 +142,7 @@ const renderCharts = (data) => {
   }
 
   function geoReducerRemove(p, v) {
-    const canonDate = new Date(v.sampled_issue_date).getTime()
+    const canonDate = moment.utc(new Date(v.sampled_issue_date)).valueOf()
     --p.count
     if(!--p.date_counts[canonDate]) { delete p.date_counts[canonDate] }
     p.sampled_mail_subscriptions -= v.sampled_mail_subscriptions
@@ -167,7 +166,7 @@ const renderCharts = (data) => {
   }
 
   // Generate dimensions and groups for choropleth
-  const stateRegion = geodata.dimension((d) => d.state_region)
+  const stateRegion = geodata.dimension(d => d.state_region)
   const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
   const salesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
 
@@ -263,7 +262,7 @@ const renderCharts = (data) => {
         return `
         <div class="tooltip-data">
           <h4 class="key">Date</h4>
-          <p>${key.format('mmm dd, yyyy')}</p>
+          <p>${key.format('MMM D, YYYY')}</p>
         </div>
         <div class="tooltip-data">
           <h4 class="key">Circulation</h4>
@@ -425,9 +424,10 @@ const renderCharts = (data) => {
               clearFilterButton.addEventListener('click', lineChart.unClick)
               renderIssueData(selected)
               samplePeriodEnd.filter(d => {
-                const currentIssueDate = new Date(selected.x)
-                const periodEnding = new Date(d)
-                const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
+                const currentIssueDate = moment.utc(selected.x)
+                const periodEnding = moment.utc(d)
+                const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
+                // console.log(periodStart.format(), periodEnding.format(), salesByState.all())
                 if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
                   Object.assign(state, {currentIssueDate, periodStart, periodEnding})
                   return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
@@ -443,10 +443,11 @@ const renderCharts = (data) => {
             chart.selectAll('circle').on('mouseover.hover', (selected) => {
               if (!state.circulationClicked) {
                 samplePeriodEnd.filter(d => {
-                  const currentIssueDate = new Date(selected.x)
-                  const periodEnding = new Date(d)
-                  const periodStart = new Date(periodEnding.getMonth() === 5 ? new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 0, 1) : new Date(periodEnding).setFullYear(periodEnding.getFullYear(), 6, 1)) // error is definitely on this line
+                  const currentIssueDate = moment.utc(selected.x)
+                  const periodEnding = moment.utc(d)
+                  const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
                   if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
+                    console.log(currentIssueDate.format(), periodStart.format(), periodEnding.format())
                     Object.assign(state, {currentIssueDate, periodStart, periodEnding})
                     return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
                   }

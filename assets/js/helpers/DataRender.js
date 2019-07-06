@@ -32,7 +32,7 @@ export function renderGeoData(data, state, selectedItem) {
     document.getElementById('state-circulation').textContent = `${renderNumberWithCommas(sampled_total_sales)}`
     document.getElementById('state-pop').textContent = `${(sampled_total_sales/state_population * 100).toFixed(3)}%`
     document.getElementById('percent-of-total').textContent = `${(sampled_total_sales/state.totalSalesByState.value.sampled_total_sales * 100).toFixed(3)}%`
-    document.getElementById('geo-issue-date').textContent = new Date(+Object.keys(date_counts)[0]).format('mmm dd, yyyy')
+    document.getElementById('geo-issue-date').textContent = moment.utc(+Object.keys(date_counts)[0]).format('MMM D, YYYY')
   } else {
     document.getElementById('selected-state').textContent = '-'
     document.getElementById('mail-subscriptions').textContent = '-'
