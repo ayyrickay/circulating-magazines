@@ -130,7 +130,6 @@ const renderCharts = (data) => {
   // Reducer function for raw geodata
   function geoReducerAdd(p, v) {
     const canonDate = moment.utc(new Date(v.sampled_issue_date)).valueOf()
-    if (p.state_population && v.state_population == null) console.log(p.state_population, v.state_population, p, v)
     ++p.count
     p.date_counts[canonDate] = (p.date_counts[canonDate] || 0) + 1
     p.sampled_mail_subscriptions += v.sampled_mail_subscriptions
@@ -416,7 +415,7 @@ const renderCharts = (data) => {
           .valueAccessor(d => parseInt(d.value.issue_circulation))
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
           .renderTitle(false)
-          .on('renderlet.click', (chart) => {
+          .on('pretransition.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
               state.circulationClicked = true
               const clearFilterButton = document.getElementById('clearIssueFilterButton')
@@ -427,7 +426,6 @@ const renderCharts = (data) => {
                 const currentIssueDate = moment.utc(selected.x)
                 const periodEnding = moment.utc(d)
                 const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
-                // console.log(periodStart.format(), periodEnding.format(), salesByState.all())
                 if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
                   Object.assign(state, {currentIssueDate, periodStart, periodEnding})
                   return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
@@ -447,7 +445,6 @@ const renderCharts = (data) => {
                   const periodEnding = moment.utc(d)
                   const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
                   if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
-                    console.log(currentIssueDate.format(), periodStart.format(), periodEnding.format())
                     Object.assign(state, {currentIssueDate, periodStart, periodEnding})
                     return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
                   }
