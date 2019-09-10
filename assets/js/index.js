@@ -216,9 +216,9 @@ const renderCharts = (data) => {
   // ****************************************************
   // Static Render Data
   // ****************************************************
-  const specialNote = notes[state.selectedMagazine.toUpperCase()]
+  const editorNote = notes[state.selectedMagazine.toUpperCase()]
   const {canonical_title, titles_included} = title1CirculationByDate.all()[0].value
-  document.getElementById('special-note').textContent = specialNote
+  document.getElementById('editor-note').textContent = editorNote
   document.getElementById('non-canon-title').textContent = canonical_title
   if (titles_included) {
     document.getElementById('titles-included').parentNode.classList.remove('hide')
