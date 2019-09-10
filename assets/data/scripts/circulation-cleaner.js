@@ -45,7 +45,8 @@ async function getCirculationJson () {
           magazine_id: match.magazine_id,
           type_id: match.type_id,
           magazine_title: match.magazine,
-          canonical_title: match.canonical_title
+          canonical_title: match.canonical_title,
+          special_notes: match.special_notes
         }
   }
     )
