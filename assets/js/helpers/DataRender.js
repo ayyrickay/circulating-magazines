@@ -3,9 +3,18 @@ import {renderNumberWithCommas, prettifyIssueData} from './DataFormat.js'
 // ****************************************************
 // Render Logic for Chart
 // ****************************************************
+export function togglePropertyVisibility(key, value, transform) {
+  if (value) {
+    document.getElementById(key).parentNode.classList.remove('hide')
+    document.getElementById(key).textContent = transform ? transform(value) : value // can use transformation to process data
+  } else {
+    document.getElementById(key).parentNode.classList.add('hide')
+  }
+}
+
 export function renderIssueData(data) {
   if (data) {
-    const {date, issue_circulation, publishing_company, price, editor, magazine_title, titles_included, circulation_quality} = prettifyIssueData(data)
+    const {date, issue_circulation, publishing_company, price, editor, magazine_title, titles_included, circulation_quality, special_notes} = prettifyIssueData(data)
     document.getElementById('total-circulation').textContent = issue_circulation
     document.getElementById('issue-date').textContent = date
     document.getElementById('issue-publisher').textContent = publishing_company
@@ -13,6 +22,7 @@ export function renderIssueData(data) {
     document.getElementById('issue-editor').textContent = editor
     document.getElementById('circulation-quality').textContent = `(${circulation_quality})`
     document.getElementById('titles-included').textContent = titles_included
+    togglePropertyVisibility('special-note', special_notes)
   } else {
     document.getElementById('circulation-quality').textContent = ''
     document.getElementById('total-circulation').textContent = '-'
@@ -20,6 +30,7 @@ export function renderIssueData(data) {
     document.getElementById('issue-publisher').textContent = '-'
     document.getElementById('issue-price').textContent = '-'
     document.getElementById('issue-editor').textContent = '-'
+    togglePropertyVisibility('special-note')
   }
 }
 

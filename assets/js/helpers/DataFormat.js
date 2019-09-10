@@ -9,9 +9,7 @@ export function renderDateInUTC(date) {
   return new Date(date).toLocaleString('en-US', {timezone: 'UTC'})
 }
 
-export function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor, magazine_title, circulation_quality, titles_included}}}) {
-  // TODO: Check to see that date is still correct here
-  console.log(key)
+export function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor, magazine_title, circulation_quality, special_notes, titles_included}}}) {
   return {
     circulation_quality: circulation_quality ? `${circulation_quality}` : null,
     date: key ? key.format('MMM D, YYYY') : '-',
@@ -20,7 +18,8 @@ export function prettifyIssueData({data: {key, value: {issue_circulation, price,
     publishing_company: publishing_company ? publishing_company : '-',
     editor: editor ? editor : '-',
     magazine_title: magazine_title ? magazine_title : '-',
-    titles_included: titles_included ? titles_included.split('@').join(', ') : '-'
+    titles_included: titles_included ? titles_included.split('@').join(', ') : '-',
+    special_notes: special_notes ? special_notes : '-'
   }
 }
 
