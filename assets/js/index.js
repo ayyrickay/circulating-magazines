@@ -1,5 +1,5 @@
 import { notes, colorScales, stateCodes } from '../data/constants.js'
-import {renderIssueData, renderGeoData} from './helpers/DataRender.js'
+import {renderIssueData, renderGeoData, togglePropertyVisibility} from './helpers/DataRender.js'
 import {renderNumberWithCommas, toMetric, formatNum} from './helpers/DataFormat.js'
 const numberFormat = d3.format(".2f")
 const titleSelector = document.getElementById('title-select')
@@ -121,7 +121,11 @@ const renderCharts = (data) => {
 
   title1Circulation.forEach(d => {
     // TODO: Check for time zone issues
-    d.actual_issue_date = moment.utc(d.actual_issue_date)
+    try {
+      d.actual_issue_date = moment.utc(d.actual_issue_date)
+    } catch (e) {
+      console.error(e, d.actual_issue_date)
+    }
   })
 
   const geodata = crossfilter(title1GeoData)
@@ -223,12 +227,7 @@ const renderCharts = (data) => {
   const {canonical_title, titles_included} = title1CirculationByDate.all()[0].value
   document.getElementById('editorial-note').textContent = editorNote
   document.getElementById('non-canon-title').textContent = canonical_title
-  if (titles_included) {
-    document.getElementById('titles-included').parentNode.classList.remove('hide')
-    document.getElementById('titles-included').textContent = titles_included ? titles_included.split('@').join(', ') : ''
-  } else {
-    document.getElementById('titles-included').parentNode.classList.add('hide')
-  }
+  togglePropertyVisibility('titles-included', titles_included, (titles) => titles.split('@').join(', '))
 
   const generateMapTipText = (sampled_total_sales, state_population) => {
     if (state.us1ChartRenderOption === 'percentOfPopulation') {

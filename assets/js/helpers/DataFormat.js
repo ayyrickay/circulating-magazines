@@ -19,7 +19,7 @@ export function prettifyIssueData({data: {key, value: {issue_circulation, price,
     editor: editor ? editor : '-',
     magazine_title: magazine_title ? magazine_title : '-',
     titles_included: titles_included ? titles_included.split('@').join(', ') : '-',
-    special_notes: special_notes ? special_notes : '-'
+    special_notes: special_notes ? special_notes : undefined
   }
 }
 
