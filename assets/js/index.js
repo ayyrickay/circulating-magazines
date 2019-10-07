@@ -228,12 +228,6 @@ const renderCharts = (data) => {
   document.getElementById('editorial-note').textContent = editorNote
   document.getElementById('non-canon-title').textContent = canonical_title
   togglePropertyVisibility('titles-included', titles_included, (titles) => titles.split('@').join(', '))
-  // if (titles_included) {
-  //   document.getElementById('titles-included').parentNode.classList.remove('hide')
-  //   document.getElementById('titles-included').textContent = titles_included ? titles_included.split('@').join(', ') : ''
-  // } else {
-  //   document.getElementById('titles-included').parentNode.classList.add('hide')
-  // }
 
   const generateMapTipText = (sampled_total_sales, state_population) => {
     if (state.us1ChartRenderOption === 'percentOfPopulation') {
