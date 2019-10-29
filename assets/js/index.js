@@ -2,7 +2,6 @@ import { notes, colorScales, stateCodes } from '../data/constants.js'
 import {renderIssueData, renderGeoData, togglePropertyVisibility} from './helpers/DataRender.js'
 import {renderNumberWithCommas, toMetric, formatNum} from './helpers/DataFormat.js'
 const numberFormat = d3.format(".2f")
-const titleSelector = document.getElementById('title-select')
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
 const lineChart = dc.lineChart("#line-chart")
 const rangeChart = dc.barChart("#range-chart")
@@ -13,22 +12,53 @@ const lineChartHeight = document.getElementById('line-chart').offsetHeight
 const state = {
   circulationClicked: false,
   geoClicked: false,
-  selectedMagazine: 'saev',
+  titles: ['saev'],
   totalSalesByState: null,
   us1ChartRenderOption: 'percentOfPopulation',
-  title1Data: {}
+  title1Data: {},
+  maxCompare: 2
 }
 
+function generateSelect () {
+  let i = 0
+
+  while (i < state.maxCompare) {
+    const selectField = document.getElementById('select-field')
+    const currentNodes = selectField.childNodes
+    const selectName = `select-field-${i}`
+    const label = document.createElement('label')
+    label.htmlFor = selectName
+    const input = document.createElement('input')
+    input.name = selectName
+    input.id = selectName
+    input.placeholder = "Select a title"
+    label.appendChild(input)
+    selectField.appendChild(label)
+    i++
+  }
+}
+
+generateSelect()
+
+const titleSelector = document.getElementById('select-field-0')
 titleSelector.value = 'Saturday Evening Post'
 
 // TODO: pull the titles list from the clean data
-new Awesomplete(titleSelector, {
-  autoFirst: true,
-  list: [{"value":"4mco","label":"4-Most Comics"},{"value":"acde","label":"Actual Detective Stories"},{"value":"acfi","label":"Ace Fiction Group"},{"value":"achi","label":"Ace High"},{"value":"acst","label":"Action Stories"},{"value":"adve","label":"Adventure"},{"value":"alam","label":"All American Comics Group"},{"value":"amco","label":"American Comics Group"},{"value":"amfi","label":"American Fiction Group"},{"value":"amma","label":"American Magazine"},{"value":"amme","label":"American Mercury"},{"value":"amst","label":"Amazing Stories"},{"value":"aral","label":"Argosy All-Story"},{"value":"arcg","label":"Archie Comic Group"},{"value":"arch","label":"Archie Comics"},{"value":"arco","label":"Argosy Combination"},{"value":"atmo","label":"Atlantic Monthly"},{"value":"batm","label":"Batman"},{"value":"beho","label":"Better Homes and Gardens"},{"value":"blbo","label":"Blue Book Magazine"},{"value":"blma","label":"Black Mask"},{"value":"bnbr","label":"B'nai B'rith Magazine"},{"value":"brst","label":"Breezy Stories"},{"value":"brth","label":"Bronze Thrills"},{"value":"cama","label":"Captain Marvel Adventures"},{"value":"cent","label":"Century"},{"value":"clma","label":"Clayton Magazines"},{"value":"clmab","label":"Clayton Magazines (bimonthly)"},{"value":"cohu","label":"College Humor"},{"value":"coll","label":"Collier's"},{"value":"colo","label":"Color"},{"value":"conf","label":"Confidential"},{"value":"copa","label":"Comics on Parade"},{"value":"cosm","label":"Cosmopolitan"},{"value":"crco","label":"Crime Confessions"},{"value":"crde","label":"Crime Detective"},{"value":"cudi","label":"Cupid's Diary"},{"value":"deco","label":"Dell Comic Group"},{"value":"dede","label":"Dell Detective Group"},{"value":"defi","label":"Dell Fiction Group"},{"value":"detco","label":"Detective Comics Group"},{"value":"dewo","label":"Dell Women's Group"},{"value":"dial","label":"Dial"},{"value":"doac","label":"Double Action Group"},{"value":"dobe","label":"Down Beat"},{"value":"drwo","label":"Dream World"},{"value":"dyde","label":"Dynamic Detective"},{"value":"ebon","label":"Ebony"},{"value":"esqu","label":"Esquire"},{"value":"ever","label":"Everybody's"},{"value":"feco","label":"Feature Comics"},{"value":"fiho","label":"Fiction House"},{"value":"fist","label":"Field and Stream"},{"value":"flac","label":"Flying Aces"},{"value":"foco","label":"Fox Comic Group"},{"value":"fome","label":"For Men Only"},{"value":"forb","label":"Forbes"},{"value":"fort","label":"Fortune"},{"value":"foru","label":"Forum"},{"value":"fron","label":"Frontier"},{"value":"gude","label":"Guide Detective Unit"},{"value":"haba","label":"Harper's Bazaar"},{"value":"harp","label":"Harper's"},{"value":"hear","label":"Hearst's"},{"value":"hit","label":"Hit"},{"value":"jet","label":"Jet"},{"value":"jetr","label":"Jewish Tribune"},{"value":"judg","label":"Judge"},{"value":"ken","label":"Ken"},{"value":"laff","label":"Laff"},{"value":"laho","label":"Ladies' Home Journal"},{"value":"libe","label":"Liberty"},{"value":"life","label":"Life"},{"value":"lisn","label":"Snappy Stories Group"},{"value":"loaro","label":"Love and Romance"},{"value":"look","label":"Look"},{"value":"loro","label":"Love Romances"},{"value":"maco","label":"Marvel Comic Group"},{"value":"mans","label":"Man's Magazine"},{"value":"mcca","label":"McCall's"},{"value":"mccl","label":"McClure's"},{"value":"metr","label":"Metropolitan"},{"value":"mimo","label":"Mickey Mouse Magazine"},{"value":"mosh","label":"Movie Show"},{"value":"muma","label":"Munsey's Magazine"},{"value":"muns","label":"Munsey Combination"},{"value":"naco","label":"National Comics Group"},{"value":"nage","label":"National Geographic Magazine"},{"value":"nati","label":"Nation"},{"value":"news","label":"Newsweek"},{"value":"neyo","label":"New Yorker"},{"value":"nwst","label":"North West Stories"},{"value":"phcu","label":"Physical Culture"},{"value":"play","label":"Playboy"},{"value":"popu","label":"Popular Publications"},{"value":"raro","label":"Ranch Romances"},{"value":"redb","label":"Redbook"},{"value":"saev","label":"Saturday Evening Post"},{"value":"scin","label":"Science and Invention"},{"value":"scma","label":"Scribner's Magazine"},{"value":"scri","label":"Script"},{"value":"shst","label":"Short Stories"},{"value":"skri","label":"Sky Riders"},{"value":"smse","label":"Smart Set"},{"value":"snst","label":"Snappy Stories"},{"value":"spil","label":"Sports Illustrated"},{"value":"stag","label":"Stag"},{"value":"stsm","label":"Street and Smith Combination"},{"value":"supe","label":"Superman"},{"value":"swst","label":"Sweetheart Stories"},{"value":"tan","label":"Tan"},{"value":"tepu","label":"Teck Publications Fiction Combination"},{"value":"teta","label":"Telling Tales"},{"value":"thgr","label":"Thrilling Group"},{"value":"time","label":"Time"},{"value":"trcom","label":"True Comics"},{"value":"trix","label":"Triple-X"},{"value":"trma","label":"Marriage Stories"},{"value":"vafa","label":"Vanity Fair"},{"value":"vogu","label":"Vogue"},{"value":"wabi","label":"War Birds"},{"value":"wano","label":"War Novels"},{"value":"wast","label":"War Stories"},{"value":"weta","label":"Weird Tales"},{"value":"woho","label":"Woman's Home Companion"},{"value":"yoma","label":"C.H. Young Publishing Group"}],
-  replace: (suggestion) => {
-    titleSelector.value = suggestion.label
-  }
-})
+function addAwesomeplete() {
+  const selectorIds = Array.from(document.getElementById('select-field').childNodes).map((nodes, i) => `select-field-${i}`)
+  selectorIds.forEach(selectorId => {
+    const selector = document.getElementById(selectorId)
+    new Awesomplete(selector, {
+      autoFirst: true,
+      list: [{"value":"4mco","label":"4-Most Comics"},{"value":"acde","label":"Actual Detective Stories"},{"value":"acfi","label":"Ace Fiction Group"},{"value":"achi","label":"Ace High"},{"value":"acst","label":"Action Stories"},{"value":"adve","label":"Adventure"},{"value":"alam","label":"All American Comics Group"},{"value":"amco","label":"American Comics Group"},{"value":"amfi","label":"American Fiction Group"},{"value":"amma","label":"American Magazine"},{"value":"amme","label":"American Mercury"},{"value":"amst","label":"Amazing Stories"},{"value":"aral","label":"Argosy All-Story"},{"value":"arcg","label":"Archie Comic Group"},{"value":"arch","label":"Archie Comics"},{"value":"arco","label":"Argosy Combination"},{"value":"atmo","label":"Atlantic Monthly"},{"value":"batm","label":"Batman"},{"value":"beho","label":"Better Homes and Gardens"},{"value":"blbo","label":"Blue Book Magazine"},{"value":"blma","label":"Black Mask"},{"value":"bnbr","label":"B'nai B'rith Magazine"},{"value":"brst","label":"Breezy Stories"},{"value":"brth","label":"Bronze Thrills"},{"value":"cama","label":"Captain Marvel Adventures"},{"value":"cent","label":"Century"},{"value":"clma","label":"Clayton Magazines"},{"value":"clmab","label":"Clayton Magazines (bimonthly)"},{"value":"cohu","label":"College Humor"},{"value":"coll","label":"Collier's"},{"value":"colo","label":"Color"},{"value":"conf","label":"Confidential"},{"value":"copa","label":"Comics on Parade"},{"value":"cosm","label":"Cosmopolitan"},{"value":"crco","label":"Crime Confessions"},{"value":"crde","label":"Crime Detective"},{"value":"cudi","label":"Cupid's Diary"},{"value":"deco","label":"Dell Comic Group"},{"value":"dede","label":"Dell Detective Group"},{"value":"defi","label":"Dell Fiction Group"},{"value":"detco","label":"Detective Comics Group"},{"value":"dewo","label":"Dell Women's Group"},{"value":"dial","label":"Dial"},{"value":"doac","label":"Double Action Group"},{"value":"dobe","label":"Down Beat"},{"value":"drwo","label":"Dream World"},{"value":"dyde","label":"Dynamic Detective"},{"value":"ebon","label":"Ebony"},{"value":"esqu","label":"Esquire"},{"value":"ever","label":"Everybody's"},{"value":"feco","label":"Feature Comics"},{"value":"fiho","label":"Fiction House"},{"value":"fist","label":"Field and Stream"},{"value":"flac","label":"Flying Aces"},{"value":"foco","label":"Fox Comic Group"},{"value":"fome","label":"For Men Only"},{"value":"forb","label":"Forbes"},{"value":"fort","label":"Fortune"},{"value":"foru","label":"Forum"},{"value":"fron","label":"Frontier"},{"value":"gude","label":"Guide Detective Unit"},{"value":"haba","label":"Harper's Bazaar"},{"value":"harp","label":"Harper's"},{"value":"hear","label":"Hearst's"},{"value":"hit","label":"Hit"},{"value":"jet","label":"Jet"},{"value":"jetr","label":"Jewish Tribune"},{"value":"judg","label":"Judge"},{"value":"ken","label":"Ken"},{"value":"laff","label":"Laff"},{"value":"laho","label":"Ladies' Home Journal"},{"value":"libe","label":"Liberty"},{"value":"life","label":"Life"},{"value":"lisn","label":"Snappy Stories Group"},{"value":"loaro","label":"Love and Romance"},{"value":"look","label":"Look"},{"value":"loro","label":"Love Romances"},{"value":"maco","label":"Marvel Comic Group"},{"value":"mans","label":"Man's Magazine"},{"value":"mcca","label":"McCall's"},{"value":"mccl","label":"McClure's"},{"value":"metr","label":"Metropolitan"},{"value":"mimo","label":"Mickey Mouse Magazine"},{"value":"mosh","label":"Movie Show"},{"value":"muma","label":"Munsey's Magazine"},{"value":"muns","label":"Munsey Combination"},{"value":"naco","label":"National Comics Group"},{"value":"nage","label":"National Geographic Magazine"},{"value":"nati","label":"Nation"},{"value":"news","label":"Newsweek"},{"value":"neyo","label":"New Yorker"},{"value":"nwst","label":"North West Stories"},{"value":"phcu","label":"Physical Culture"},{"value":"play","label":"Playboy"},{"value":"popu","label":"Popular Publications"},{"value":"raro","label":"Ranch Romances"},{"value":"redb","label":"Redbook"},{"value":"saev","label":"Saturday Evening Post"},{"value":"scin","label":"Science and Invention"},{"value":"scma","label":"Scribner's Magazine"},{"value":"scri","label":"Script"},{"value":"shst","label":"Short Stories"},{"value":"skri","label":"Sky Riders"},{"value":"smse","label":"Smart Set"},{"value":"snst","label":"Snappy Stories"},{"value":"spil","label":"Sports Illustrated"},{"value":"stag","label":"Stag"},{"value":"stsm","label":"Street and Smith Combination"},{"value":"supe","label":"Superman"},{"value":"swst","label":"Sweetheart Stories"},{"value":"tan","label":"Tan"},{"value":"tepu","label":"Teck Publications Fiction Combination"},{"value":"teta","label":"Telling Tales"},{"value":"thgr","label":"Thrilling Group"},{"value":"time","label":"Time"},{"value":"trcom","label":"True Comics"},{"value":"trix","label":"Triple-X"},{"value":"trma","label":"Marriage Stories"},{"value":"vafa","label":"Vanity Fair"},{"value":"vogu","label":"Vogue"},{"value":"wabi","label":"War Birds"},{"value":"wano","label":"War Novels"},{"value":"wast","label":"War Stories"},{"value":"weta","label":"Weird Tales"},{"value":"woho","label":"Woman's Home Companion"},{"value":"yoma","label":"C.H. Young Publishing Group"}],
+      replace: (suggestion) => {
+        selector.value = suggestion.label
+      }
+    })
+  })
+}
+
+addAwesomeplete()
 
 // ****************************************************
 // Helper Functions
@@ -87,6 +117,7 @@ document.getElementById('reset-button').addEventListener('click', () => {
   dc.redrawAll()
 })
 
+// document.addEventListener('awesomplete-selectcomplete').
 document.getElementById('renderOption1').addEventListener('change', changeRenderOption)
 document.getElementById('renderOption2').addEventListener('change', changeRenderOption)
 
@@ -223,7 +254,7 @@ const renderCharts = (data) => {
   // ****************************************************
   // Static Render Data
   // ****************************************************
-  const editorNote = notes[state.selectedMagazine.toUpperCase()]
+  const editorNote = notes[state.titles[0].toUpperCase()]
   const {canonical_title, titles_included} = title1CirculationByDate.all()[0].value
   document.getElementById('editorial-note').textContent = editorNote
   document.getElementById('non-canon-title').textContent = canonical_title
@@ -294,7 +325,8 @@ const renderCharts = (data) => {
     }
 
     window.addEventListener("awesomplete-selectcomplete", (e) => {
-                    state.selectedMagazine = e.text.value
+      const targetNode = e.target.id.split('-').pop()
+                    state.titles[targetNode] = e.text.value
                     resetCharts()
                     generateCharts()
                 }, false)
@@ -408,14 +440,17 @@ const renderCharts = (data) => {
           .height(lineChartHeight-50)
           .xUnits(d3.timeYears)
           .margins({ top: 10, right: 10, bottom: 50, left: 80 })
-          .dimension(title1Dates)
           .rangeChart(rangeChart)
-          .group(title1CirculationByDate)
-          .colors(colorScales.blue[colorScales.blue.length - 1])
           .elasticY(true)
           .brushOn(false)
-          .valueAccessor(d => parseInt(d.value.issue_circulation))
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
+          .compose([
+            dc.lineChart(lineChart)
+              .group(title1CirculationByDate)
+              .dimension(title1Dates)
+              .colors(colorScales.blue[colorScales.blue.length - 1])
+              .valueAccessor(d => parseInt(d.value.issue_circulation))
+          ])
           .renderTitle(false)
           .on('pretransition.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
@@ -510,7 +545,9 @@ const renderCharts = (data) => {
 }
 
 const generateCharts = () => {
-  Promise.all([`assets/data/clean/${state.selectedMagazine}-geodata.json`, `assets/data/clean/${state.selectedMagazine}-circulation.json`].map(url => d3.json(url)))
+  const data = state.titles.map(currentTitle => [`assets/data/clean/${currentTitle}-geodata.json`, `assets/data/clean/${currentTitle}-circulation.json`]).flat()
+  console.log(data)
+  Promise.all(data.map(url => d3.json(url)))
   .then(renderCharts)
 }
 
