@@ -41,119 +41,235 @@
         <div id="range-chart"></div>
         <p class="caption">Click and drag on the lower chart to zoom in on a selected time range.</p>
       </div>
-      <div class='choropleth-container'>
-          <div class="chart-header">
-            <h3 class="title">Circulation By State</h3>
-            <div class="switch-field">
-              <input type="radio" id="renderOption2"
-               name="chart-group" value="percentOfPopulation"
-               checked
-               />
-              <label for="renderOption2">% of Population</label>
-              <input
-                type="radio"
-                id="renderOption1"
-                name="chart-group"
-                value="rawData"
-                />
-              <label for="renderOption1">Raw Data</label>
-              <button id="clearGeoFilterButton" class="switch-button hide">
-               Show All States
-              </button>
+      <div class="choropleth-container">
+        <div class='choropleth-instance'>
+            <div class="chart-header">
+              <h3 class="title">Circulation By State</h3>
+              <div class="switch-field">
+                <input type="radio" id="renderOption2"
+                 name="chart-group" value="percentOfPopulation"
+                 checked
+                 />
+                <label for="renderOption2">% of Population</label>
+                <input
+                  type="radio"
+                  id="renderOption1"
+                  name="chart-group"
+                  value="rawData"
+                  />
+                <label for="renderOption1">Raw Data</label>
+                <button id="clearGeoFilterButton" class="switch-button hide">
+                 Show All States
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="choropleth-data">
-            <div id="us1-chart">
-            </div>
-            <div class="clearfix"></div>
-            <div class="render-data">
-              <div class="tooltip-data flex sb">
-                <div class="half-em-margin">
-                  <h4 class="key">Sample Issue Date (for Geodata)</h4>
-                  <p id="geo-issue-date"> - </p>
-                </div>
+            <div class="choropleth-data">
+              <div id="us1-chart">
               </div>
-              <div class="tooltip-data flex sb">
-                <div class="half-em-margin">
-                  <h4 class="key">State</h4>
-                  <p id="selected-state">-</p>
+              <div class="clearfix"></div>
+              <div class="render-data">
+                <div class="tooltip-data flex sb">
+                  <div class="half-em-margin">
+                    <h4 class="key">Sample Issue Date (for Geodata)</h4>
+                    <p id="geo-issue-date"> - </p>
+                  </div>
                 </div>
-                <div class="half-em-margin">
-                  <h4 class="key">Total State Circulation</h4>
-                  <p id="state-circulation">-</p>
+                <div class="tooltip-data flex sb">
+                  <div class="half-em-margin">
+                    <h4 class="key">State</h4>
+                    <p id="selected-state">-</p>
+                  </div>
+                  <div class="half-em-margin">
+                    <h4 class="key">Total State Circulation</h4>
+                    <p id="state-circulation">-</p>
+                  </div>
                 </div>
-              </div>
-              <div class="tooltip-data flex sb">
-                <div class="half-em-margin">
-                  <h4 class="key">% of State Population</h4>
-                  <p id="state-pop"> -</p>
+                <div class="tooltip-data flex sb">
+                  <div class="half-em-margin">
+                    <h4 class="key">% of State Population</h4>
+                    <p id="state-pop"> -</p>
+                  </div>
+                  <div class="half-em-margin">
+                    <h4 class="key">% of Total Circulation</h4>
+                    <p id="percent-of-total">-</p>
+                  </div>
                 </div>
-                <div class="half-em-margin">
-                  <h4 class="key">% of Total Circulation</h4>
-                  <p id="percent-of-total">-</p>
+                <div class="tooltip-data flex sb">
+                  <div class="half-em-margin">
+                    <h4 class="key">Mail Subscriptions</h4>
+                    <p id="mail-subscriptions"> - </p>
+                   </div>
+                  <div class="half-em-margin">
+                    <h4 class="key">Single Copy Sales</h4>
+                    <p id="single-copy-sales"> - </p>
+                   </div>
                 </div>
-              </div>
-              <div class="tooltip-data flex sb">
-                <div class="half-em-margin">
-                  <h4 class="key">Mail Subscriptions</h4>
-                  <p id="mail-subscriptions"> - </p>
-                 </div>
-                <div class="half-em-margin">
-                  <h4 class="key">Single Copy Sales</h4>
-                  <p id="single-copy-sales"> - </p>
-                 </div>
-              </div>
-              <div class="tooltip-data flex sb">
+                <div class="tooltip-data flex sb">
+
+                </div>
 
               </div>
+            </div>
+            <div class="data-table-2">
+              <div class="tooltip-data flex sb">
+                <div class="half-em-margin">
+                  <h4 class="key">Title</h4>
+                  <p id="non-canon-title">-</p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Issue Date</h4>
+                  <p id="issue-date"> - </p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Total Circulation</h4>
+                  <p><span id="total-circulation">-</span> <span id="circulation-quality"></span></p>
+                </div>
+              </div>
+              <div class="tooltip-data flex sb">
+                <div class="half-em-margin">
+                  <h4 class="key">Publishing Company</h4>
+                  <p id="issue-publisher">-</p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Editor</h4>
+                  <p id="issue-editor">-</p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Price</h4>
+                  <p id="issue-price">-</p>
+                </div>
+              </div>
+              <div class="tooltip-data">
+                <h4 class="key">Titles Included</h4>
+                <figcaption id="titles-included">
+                </figcaption>
+              </div>
+              <div class="tooltip-data hide">
+                <h4 class="key">Special Notes for this Issue</h4>
+                <figcaption id="special-note">
+                </figcaption>
+              </div>
+              <div class="tooltip-data">
+                <h4 class="key">Editorial Notes</h4>
+                <figcaption id="editorial-note">
+                </figcaption>
+              </div>
+            </div>
+        </div>
+        <div class='choropleth-instance'>
+            <div class="chart-header">
+              <h3 class="title">Circulation By State</h3>
+              <div class="switch-field">
+                <input type="radio" id="renderOption2"
+                 name="chart-group" value="percentOfPopulation"
+                 checked
+                 />
+                <label for="renderOption2">% of Population</label>
+                <input
+                  type="radio"
+                  id="renderOption1"
+                  name="chart-group"
+                  value="rawData"
+                  />
+                <label for="renderOption1">Raw Data</label>
+                <button id="clearGeoFilterButton" class="switch-button hide">
+                 Show All States
+                </button>
+              </div>
+            </div>
+            <div class="choropleth-data">
+              <div id="us2-chart">
+              </div>
+              <div class="clearfix"></div>
+              <div class="render-data">
+                <div class="tooltip-data flex sb">
+                  <div class="half-em-margin">
+                    <h4 class="key">Sample Issue Date (for Geodata)</h4>
+                    <p id="geo-issue-date"> - </p>
+                  </div>
+                </div>
+                <div class="tooltip-data flex sb">
+                  <div class="half-em-margin">
+                    <h4 class="key">State</h4>
+                    <p id="selected-state">-</p>
+                  </div>
+                  <div class="half-em-margin">
+                    <h4 class="key">Total State Circulation</h4>
+                    <p id="state-circulation">-</p>
+                  </div>
+                </div>
+                <div class="tooltip-data flex sb">
+                  <div class="half-em-margin">
+                    <h4 class="key">% of State Population</h4>
+                    <p id="state-pop"> -</p>
+                  </div>
+                  <div class="half-em-margin">
+                    <h4 class="key">% of Total Circulation</h4>
+                    <p id="percent-of-total">-</p>
+                  </div>
+                </div>
+                <div class="tooltip-data flex sb">
+                  <div class="half-em-margin">
+                    <h4 class="key">Mail Subscriptions</h4>
+                    <p id="mail-subscriptions"> - </p>
+                   </div>
+                  <div class="half-em-margin">
+                    <h4 class="key">Single Copy Sales</h4>
+                    <p id="single-copy-sales"> - </p>
+                   </div>
+                </div>
+                <div class="tooltip-data flex sb">
 
-            </div>
-          </div>
-          <div class="data-table-2">
-            <div class="tooltip-data flex sb">
-              <div class="half-em-margin">
-                <h4 class="key">Title</h4>
-                <p id="non-canon-title">-</p>
-              </div>
-              <div class="half-em-margin">
-                <h4 class="key">Issue Date</h4>
-                <p id="issue-date"> - </p>
-              </div>
-              <div class="half-em-margin">
-                <h4 class="key">Total Circulation</h4>
-                <p><span id="total-circulation">-</span> <span id="circulation-quality"></span></p>
+                </div>
+
               </div>
             </div>
-            <div class="tooltip-data flex sb">
-              <div class="half-em-margin">
-                <h4 class="key">Publishing Company</h4>
-                <p id="issue-publisher">-</p>
+            <div class="data-table-2">
+              <div class="tooltip-data flex sb">
+                <div class="half-em-margin">
+                  <h4 class="key">Title</h4>
+                  <p id="non-canon-title">-</p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Issue Date</h4>
+                  <p id="issue-date"> - </p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Total Circulation</h4>
+                  <p><span id="total-circulation">-</span> <span id="circulation-quality"></span></p>
+                </div>
               </div>
-              <div class="half-em-margin">
-                <h4 class="key">Editor</h4>
-                <p id="issue-editor">-</p>
+              <div class="tooltip-data flex sb">
+                <div class="half-em-margin">
+                  <h4 class="key">Publishing Company</h4>
+                  <p id="issue-publisher">-</p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Editor</h4>
+                  <p id="issue-editor">-</p>
+                </div>
+                <div class="half-em-margin">
+                  <h4 class="key">Price</h4>
+                  <p id="issue-price">-</p>
+                </div>
               </div>
-              <div class="half-em-margin">
-                <h4 class="key">Price</h4>
-                <p id="issue-price">-</p>
+              <div class="tooltip-data">
+                <h4 class="key">Titles Included</h4>
+                <figcaption id="titles-included">
+                </figcaption>
+              </div>
+              <div class="tooltip-data hide">
+                <h4 class="key">Special Notes for this Issue</h4>
+                <figcaption id="special-note">
+                </figcaption>
+              </div>
+              <div class="tooltip-data">
+                <h4 class="key">Editorial Notes</h4>
+                <figcaption id="editorial-note">
+                </figcaption>
               </div>
             </div>
-            <div class="tooltip-data">
-              <h4 class="key">Titles Included</h4>
-              <figcaption id="titles-included">
-              </figcaption>
-            </div>
-            <div class="tooltip-data hide">
-              <h4 class="key">Special Notes for this Issue</h4>
-              <figcaption id="special-note">
-              </figcaption>
-            </div>
-            <div class="tooltip-data">
-              <h4 class="key">Editorial Notes</h4>
-              <figcaption id="editorial-note">
-              </figcaption>
-            </div>
-          </div>
+        </div>
       </div>
     </div>
 

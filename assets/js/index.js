@@ -3,18 +3,22 @@ import {renderIssueData, renderGeoData, togglePropertyVisibility} from './helper
 import {renderNumberWithCommas, toMetric, formatNum} from './helpers/DataFormat.js'
 const numberFormat = d3.format(".2f")
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
-const lineChart = dc.lineChart("#line-chart")
+const us2Chart = dc.geoChoroplethChart("#us2-chart")
+const composite = dc.compositeChart("#line-chart")
 const rangeChart = dc.barChart("#range-chart")
 const us1Width = document.getElementById('us1-chart').offsetWidth
 const us1Height = document.getElementById('us1-chart').offsetHeight
+const us2Width = document.getElementById('us2-chart').offsetWidth
+const us2Height = document.getElementById('us2-chart').offsetHeight
 const lineChartWidth = document.getElementById('line-chart').offsetWidth
 const lineChartHeight = document.getElementById('line-chart').offsetHeight
 const state = {
-  circulationClicked: false,
+  circulationClicked: false, // Make this work across two separate choropleths
   geoClicked: false,
-  titles: ['saev'],
+  titles: ['saev', 'neyo'],
   totalSalesByState: null,
   us1ChartRenderOption: 'percentOfPopulation',
+  us2ChartRenderOption: 'percentOfPopulation',
   title1Data: {},
   maxCompare: 2
 }
@@ -40,9 +44,6 @@ function generateSelect () {
 
 generateSelect()
 
-const titleSelector = document.getElementById('select-field-0')
-titleSelector.value = 'Saturday Evening Post'
-
 // TODO: pull the titles list from the clean data
 function addAwesomeplete() {
   const selectorIds = Array.from(document.getElementById('select-field').childNodes).map((nodes, i) => `select-field-${i}`)
@@ -59,6 +60,11 @@ function addAwesomeplete() {
 }
 
 addAwesomeplete()
+
+const titleSelector = document.getElementById('select-field-0')
+const title2Selector = document.getElementById('select-field-1')
+titleSelector.value = 'Saturday Evening Post'
+title2Selector.value = 'New Yorker'
 
 // ****************************************************
 // Helper Functions
@@ -112,7 +118,7 @@ const getTopValue = (group) => d3.max(group.all(), d => {
 // Create Event Listeners for HTML
 // ****************************************************
 document.getElementById('reset-button').addEventListener('click', () => {
-  lineChart.filterAll()
+  composite.filterAll()
   rangeChart.filterAll()
   dc.redrawAll()
 })
@@ -122,7 +128,7 @@ document.getElementById('renderOption1').addEventListener('change', changeRender
 document.getElementById('renderOption2').addEventListener('change', changeRenderOption)
 
 window.onresize = (event) => {
-  lineChart.width(getWidth('line-chart') - 50).height(getHeight('line-chart') - 50).transitionDuration(0)
+  composite.width(getWidth('line-chart') - 50).height(getHeight('line-chart') - 50).transitionDuration(0)
   rangeChart.width(getWidth('line-chart') - 50).transitionDuration(0)
   us1Chart
     .projection(d3.geoAlbersUsa()
@@ -135,7 +141,7 @@ window.onresize = (event) => {
 
   dc.renderAll()
   us1Chart.transitionDuration(750)
-  lineChart.transitionDuration(750)
+  composite.transitionDuration(750)
 }
 
 // ****************************************************
@@ -143,12 +149,22 @@ window.onresize = (event) => {
 // ****************************************************
 
 const renderCharts = (data) => {
+
+  // TODO: Use array destructuring to make better sense of what's happening changeRenderOption
+  // const [title1Geodata, title1Circulation, title2GeoData, title2Circulation] = data
+
   const title1GeoData = data[0].filter(data => {
     if (!data) {return false}
     return stateCodes[data.state_region]
   })
 
+  const title2GeoData = data[2].filter(data => {
+    if (!data) {return false}
+    return stateCodes[data.state_region]
+  })
+
   const title1Circulation = data[1]
+  const circulationData2 = data[3]
 
   title1Circulation.forEach(d => {
     // TODO: Check for time zone issues
@@ -159,8 +175,24 @@ const renderCharts = (data) => {
     }
   })
 
+  // TODO: Can I check for a title2 and then do all of this?
+  circulationData2.forEach(d => {
+    // TODO: Check for time zone issues
+    try {
+      d.actual_issue_date = moment.utc(d.actual_issue_date)
+    } catch (e) {
+      console.error(e, d.actual_issue_date)
+    }
+  })
+
+  console.log(title2GeoData, circulationData2)
+
+
   const geodata = crossfilter(title1GeoData)
   const circulation = crossfilter(title1Circulation)
+
+  const title2Geodata = crossfilter(title2GeoData)
+  const title2Circulation = crossfilter(circulationData2)
 
   // Reducer function for raw geodata
   function geoReducerAdd(p, v) {
@@ -199,16 +231,7 @@ const renderCharts = (data) => {
     }
   }
 
-  // Generate dimensions and groups for choropleth
-  const stateRegion = geodata.dimension(d => d.state_region)
-  const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
-  const salesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
-
-  state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-
-  // generate dimensions and groups for line/range chart
-  const title1Dates = circulation.dimension(d => d.actual_issue_date)
-  const title1CirculationByDate = title1Dates.group().reduce((p, v) => {
+  function circulationReducerAdd(p, v) {
       ++p.count
       p.canonical_title = v.canonical_title
       p.issue_circulation += v.issue_circulation
@@ -220,9 +243,9 @@ const renderCharts = (data) => {
       p.circulation_quality = v.circulation_quality
       p.special_notes = v.special_notes
       return p
-    },
+    }
     /* callback for when data is removed from the current filter results */
-    (p, v) => {
+    function circulationReducerRemove(p, v) {
       --p.count
       p.canonical_title = v.canonical_title
       p.issue_circulation -= v.issue_circulation
@@ -234,21 +257,44 @@ const renderCharts = (data) => {
       p.circulation_quality = v.circulation_quality
       p.special_notes = v.special_notes
       return p
-    },
+    }
     /* initialize p */
-    () => ({
-      canonical_title:"",
-      count: 0,
-      issue_circulation: 0,
-      price: "",
-      type: "",
-      publishing_company: "",
-      titles_included: "",
-      editor: "",
-      circulation_quality: "",
-      special_notes: ""
-    })
-    )
+    function circulationReducerDefault(){
+      return {
+        canonical_title:"",
+        count: 0,
+        issue_circulation: 0,
+        price: "",
+        type: "",
+        publishing_company: "",
+        titles_included: "",
+        editor: "",
+        circulation_quality: "",
+        special_notes: ""
+      }
+    }
+  // TODO: Candidate for a function
+  // Generate dimensions and groups for choropleth (make a function?)
+  const stateRegion = geodata.dimension(d => d.state_region)
+  const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
+  const salesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
+
+  state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+
+  const title2StateRegion = geodata.dimension(d => d.state_region)
+  const title2SamplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
+  const title2SalesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
+
+  state.title2TotalSalesByState = title2SalesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+
+  // generate dimensions and groups for line/range chart
+  // TODO: Candidate for a function
+  const title1Dates = circulation.dimension(d => d.actual_issue_date)
+  const title1CirculationByDate = title1Dates.group().reduce(circulationReducerAdd, circulationReducerRemove, circulationReducerDefault)
+
+  const title2Dates = title2Circulation.dimension(d => d.actual_issue_date)
+  const title2CirculationByDate = title2Dates.group().reduce(circulationReducerAdd, circulationReducerRemove, circulationReducerDefault)
+
 
 
   // ****************************************************
@@ -327,6 +373,7 @@ const renderCharts = (data) => {
     window.addEventListener("awesomplete-selectcomplete", (e) => {
       const targetNode = e.target.id.split('-').pop()
                     state.titles[targetNode] = e.text.value
+                    console.log(state.titles)
                     resetCharts()
                     generateCharts()
                 }, false)
@@ -433,23 +480,108 @@ const renderCharts = (data) => {
                   chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
                 })
 
-        lineChart.unClick = resetCharts
+        us2Chart.width(us2Width + 367)
+                .height(us2Height)
+                .dimension(title2StateRegion)
+                .group(title2SalesByState)
+                .colors(d3.scaleQuantize().range(colorScales.red))
+                .colorDomain(generateScale(title2SalesByState))
+                .colorAccessor(d => {
+                  return d ? d : 0
+                })
+                .overlayGeoJson(statesJson.features, "state", d => {
+                  return d.properties.name
+                })
+                .projection(d3.geoAlbersUsa()
+                  .scale(Math.min(getWidth('us2-chart') * 1.5, getHeight('us2-chart') * 1.5))
+                  .translate([getWidth('us2-chart') / 8, getHeight('us2-chart') / 2.5])
+                )
+                .valueAccessor(kv => {
+                  if (kv.value !== undefined) {
+                    if (state.us2ChartRenderOption === 'percentOfPopulation') {
+                      return kv.value.sampled_total_sales / kv.value.state_population
+                    } else {
+                      return kv.value.sampled_total_sales
+                    }
+                  }
+                })
+                .renderTitle(false)
+                .legend(dc.legend().x(getWidth('us2-chart') / 4.5).y(getHeight('us2-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
+                .on('pretransition', (chart) => {
+                    chart.selectAll('path')
+                        .call(mapTip)
+                        .on('mouseover.mapTip', d => {
+                          if (!state.geoClicked) {
+                            mapTip.show(d)
+                            renderGeoData(d, state, title2SalesByState.all().filter(item => item.key === d.properties.name)[0])
+                          }
+                        })
+                        .on('mouseout.mapTip', d => {
+                          mapTip.hide(d)
+                          if(!state.geoClicked) {
+                            renderGeoData(null, state)
+                          }
+                        });
+                })
+                .on('renderlet.click', chart => {
+                  chart.selectAll('path').on('click', selected => {
+                    const selectedState = selected.properties.name
+                    if(state.circulationClicked && state.geoClicked) {
+                      chart.filter(null)
+                      chart.filter(selectedState)
+                      renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
+                    } else if (state.circulationClicked) {
+                      state.geoClicked = true
+                      const clearGeoFilterButton = document.getElementById('clearGeoFilterButton')
+                      clearGeoFilterButton.classList.remove('hide')
+                      clearGeoFilterButton.addEventListener('click', () => {
+                        renderGeoData(null, state)
+                        chart.filter(null)
+                        state.geoClicked = false
+                        clearGeoFilterButton.classList.add('hide')
+                      })
+                      chart.filter(selectedState)
+                      renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
+                    }
+                  })
+                })
+                .on('filtered.geodata', (chart, filter) => {
+                  if(chart.filter() === null) {
+                    renderGeoData(null, state)
+                    state.geoClicked = false
+                    clearGeoFilterButton.classList.add('hide')
+                  }
+                })
+                .on("preRender", (chart) => {
+                  chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
+                })
+                .on("preRedraw", (chart) => {
+                  chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
+                })
 
-        lineChart
+        composite.unClick = resetCharts
+
+        // .rangeChart(rangeChart)
+        //
+        // .brushOn(false)
+        composite
           .width(lineChartWidth-50)
           .height(lineChartHeight-50)
-          .xUnits(d3.timeYears)
           .margins({ top: 10, right: 10, bottom: 50, left: 80 })
-          .rangeChart(rangeChart)
           .elasticY(true)
-          .brushOn(false)
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
+          .xUnits(d3.timeYears)
           .compose([
-            dc.lineChart(lineChart)
+            dc.lineChart(composite)
               .group(title1CirculationByDate)
               .dimension(title1Dates)
               .colors(colorScales.blue[colorScales.blue.length - 1])
-              .valueAccessor(d => parseInt(d.value.issue_circulation))
+              .valueAccessor(d => parseInt(d.value.issue_circulation)),
+              dc.lineChart(composite)
+                .group(title2CirculationByDate)
+                .dimension(title2Dates)
+                .colors(colorScales.red[colorScales.red.length - 1])
+                .valueAccessor(d => parseInt(d.value.issue_circulation))
           ])
           .renderTitle(false)
           .on('pretransition.click', (chart) => {
@@ -457,7 +589,7 @@ const renderCharts = (data) => {
               state.circulationClicked = true
               const clearFilterButton = document.getElementById('clearIssueFilterButton')
               clearFilterButton.classList.remove('hide')
-              clearFilterButton.addEventListener('click', lineChart.unClick)
+              clearFilterButton.addEventListener('click', composite.unClick)
               renderIssueData(selected)
               samplePeriodEnd.filter(d => {
                 const currentIssueDate = moment.utc(selected.x)
@@ -504,6 +636,9 @@ const renderCharts = (data) => {
             })
 
           })
+          .render()
+
+          /*
           .on('pretransition', (chart) => {
               chart.selectAll('circle')
                   .call(lineTip)
@@ -514,7 +649,7 @@ const renderCharts = (data) => {
                     lineTip.hide(selected)
                   })
           })
-          .render()
+          */
 
 
         rangeChart
@@ -546,7 +681,6 @@ const renderCharts = (data) => {
 
 const generateCharts = () => {
   const data = state.titles.map(currentTitle => [`assets/data/clean/${currentTitle}-geodata.json`, `assets/data/clean/${currentTitle}-circulation.json`]).flat()
-  console.log(data)
   Promise.all(data.map(url => d3.json(url)))
   .then(renderCharts)
 }

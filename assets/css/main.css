@@ -102,9 +102,12 @@ body {
 
 .choropleth-container {
 	display: flex;
+}
+
+.choropleth-instance {
+	display: flex;
 	flex-flow: column;
-	/* height: 25em; */
-	width: 50%;
+	width: 45%;
 	margin: 1em auto;
 	background-color: #fff;
   border: rgba(0,0,0,.3) 1px solid;
