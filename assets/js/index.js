@@ -13,14 +13,22 @@ const us2Height = document.getElementById('us2-chart').offsetHeight
 const lineChartWidth = document.getElementById('line-chart').offsetWidth
 const lineChartHeight = document.getElementById('line-chart').offsetHeight
 const state = {
-  circulationClicked: false, // Make this work across two separate choropleths
-  geoClicked: false,
+  maxCompare: 2,
   titles: ['saev', 'neyo'],
-  totalSalesByState: null,
-  us1ChartRenderOption: 'percentOfPopulation',
-  us2ChartRenderOption: 'percentOfPopulation',
-  title1Data: {},
-  maxCompare: 2
+  title1: {
+    totalSalesByState: null,
+    usChartRenderOption: 'percentOfPopulation',
+    data: {},
+    geoClicked: false,
+    circulationClicked: false
+  },
+  title2: {
+    totalSalesByState: null,
+    usChartRenderOption: 'percentOfPopulation',
+    data: {},
+    geoClicked: false,
+    circulationClicked: false
+  }
 }
 
 function generateSelect () {
@@ -69,14 +77,13 @@ title2Selector.value = 'New Yorker'
 // ****************************************************
 // Helper Functions
 // ****************************************************
-function changeRenderOption(event) {
-  if (state.circulationClicked) {
-    state.us1ChartRenderOption = event.target.value
-    us1Chart.customUpdate()
+function changeRenderOption(event, title) {
+  if (state[title].circulationClicked) {
+    state[title].ChartRenderOption = event.target.value
+    title === 'title1' ? us1Chart.customUpdate() : us2Chart.customUpdate()
     dc.redrawAll()
   } else {
-    document.getElementById('renderOption1').checked = true
-    document.getElementById('renderOption2').checked = false
+    document.getElementById(`${title}RenderOption1`).checked = true
   }
 }
 
@@ -99,7 +106,7 @@ function getHeight(element) {
 }
 
 function generateScale(chartGroup) {
-  if (state.us1ChartRenderOption === 'percentOfPopulation') {
+  if (state.title1.usChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
     return [0, getTopValue(chartGroup)]
@@ -107,7 +114,7 @@ function generateScale(chartGroup) {
 }
 
 const getTopValue = (group) => d3.max(group.all(), d => {
-  if (state.us1ChartRenderOption === 'percentOfPopulation') {
+  if (state.title1.usChartRenderOption === 'percentOfPopulation') {
     return d.value.sampled_total_sales / d.value.state_population
   } else {
     return d.value.sampled_total_sales
@@ -124,8 +131,10 @@ document.getElementById('reset-button').addEventListener('click', () => {
 })
 
 // document.addEventListener('awesomplete-selectcomplete').
-document.getElementById('renderOption1').addEventListener('change', changeRenderOption)
-document.getElementById('renderOption2').addEventListener('change', changeRenderOption)
+document.getElementById('title1RenderOption1').addEventListener('change', (ev) => changeRenderOption(ev, 'title1'))
+document.getElementById('title1RenderOption2').addEventListener('change', (ev) => changeRenderOption(ev, 'title1'))
+document.getElementById('title2RenderOption1').addEventListener('change', (ev) => changeRenderOption(ev, 'title2'))
+document.getElementById('title2RenderOption2').addEventListener('change', (ev) => changeRenderOption(ev, 'title2'))
 
 window.onresize = (event) => {
   composite.width(getWidth('line-chart') - 50).height(getHeight('line-chart') - 50).transitionDuration(0)
@@ -139,8 +148,18 @@ window.onresize = (event) => {
     .width(getWidth('us1-chart') - 200)
     .height(getHeight('us1-chart') - 50)
 
+    us2Chart
+      .projection(d3.geoAlbersUsa()
+        .scale(Math.min(getWidth('us2-chart') * 1.5, getHeight('us2-chart') * 1.5))
+        .translate([getWidth('us2-chart') / 8, getHeight('us2-chart') / 2.5])
+      )
+      .transitionDuration(0)
+      .width(getWidth('us2-chart') - 200)
+      .height(getHeight('us2-chart') - 50)
+
   dc.renderAll()
   us1Chart.transitionDuration(750)
+  us2Chart.transitionDuration(750)
   composite.transitionDuration(750)
 }
 
@@ -184,9 +203,6 @@ const renderCharts = (data) => {
       console.error(e, d.actual_issue_date)
     }
   })
-
-  console.log(title2GeoData, circulationData2)
-
 
   const geodata = crossfilter(title1GeoData)
   const circulation = crossfilter(title1Circulation)
@@ -279,13 +295,13 @@ const renderCharts = (data) => {
   const samplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
   const salesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
 
-  state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+  state.title1.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
-  const title2StateRegion = geodata.dimension(d => d.state_region)
-  const title2SamplePeriodEnd = geodata.dimension(d => d.sample_period_ending)
-  const title2SalesByState = stateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
+  const title2StateRegion = title2Geodata.dimension(d => d.state_region)
+  const title2SamplePeriodEnd = title2Geodata.dimension(d => d.sample_period_ending)
+  const title2SalesByState = title2StateRegion.group().reduce(geoReducerAdd, geoReducerRemove, geoReducerDefault)
 
-  state.title2TotalSalesByState = title2SalesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+  state.title2.TotalSalesByState = title2SalesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
   // generate dimensions and groups for line/range chart
   // TODO: Candidate for a function
@@ -300,31 +316,42 @@ const renderCharts = (data) => {
   // ****************************************************
   // Static Render Data
   // ****************************************************
-  const editorNote = notes[state.titles[0].toUpperCase()]
-  const {canonical_title, titles_included} = title1CirculationByDate.all()[0].value
-  document.getElementById('editorial-note').textContent = editorNote
-  document.getElementById('non-canon-title').textContent = canonical_title
-  togglePropertyVisibility('titles-included', titles_included, (titles) => titles.split('@').join(', '))
+  function renderStaticContent (title) {
+    // Renders static information for each title
+    const {canonical_title, titles_included} = title === 'title1' ?
+      title1CirculationByDate.all()[0].value :
+      title2CirculationByDate.all()[0].value
+
+    const editorNote = notes[state.titles[title === 'title1' ? 0 : 1].toUpperCase()]
+    document.getElementById(`${title}-editorial-note`).textContent = editorNote
+    document.getElementById(`${title}-non-canon-title`).textContent = canonical_title
+    state[title].canonical_title = canonical_title
+    togglePropertyVisibility(`${title}-titles-included`, titles_included, (titles) => titles.split('@').join(', '))
+  }
+
+  renderStaticContent('title1')
+  renderStaticContent('title2')
 
   const generateMapTipText = (sampled_total_sales, state_population) => {
-    if (state.us1ChartRenderOption === 'percentOfPopulation') {
+    if (state.title1.usChartRenderOption === 'percentOfPopulation') {
       return `${(sampled_total_sales / state_population).toFixed(3)} copies per person`
     } else {
       return `${renderNumberWithCommas(sampled_total_sales)} copies`
     }
   }
 
-  const mapTip = d3.tip()
+  const title1MapTip = d3.tip()
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
+      console.log('title1maptip', state.title1)
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
         <p>${d.properties.name}</p>
       </div>
       <div class="tooltip-data">
-      ${state.circulationClicked ?
+      ${state.title1.circulationClicked ?
         '' :
         `<h4 class="key">Data</h4>
          <p> Please select a specific issue for more detailed data</p>`
@@ -332,6 +359,25 @@ const renderCharts = (data) => {
       </div>
       `
     })
+
+    const title2MapTip = d3.tip()
+      .attr('class', 'tooltip')
+      .offset([-10, 0])
+      .html((d) => {
+        return `
+        <div class="tooltip-data">
+          <h4 class="key">State</h4>
+          <p>${d.properties.name}</p>
+        </div>
+        <div class="tooltip-data">
+        ${state.title2.circulationClicked ?
+          '' :
+          `<h4 class="key">Data</h4>
+           <p> Please select a specific issue for more detailed data</p>`
+          }
+        </div>
+        `
+      })
 
     const lineTip = d3.tip()
       .attr('class', 'tooltip')
@@ -351,16 +397,19 @@ const renderCharts = (data) => {
 
     const resetCharts = () => {
       samplePeriodEnd.filter(null)
-      state.circulationClicked = false
+      state.title1.circulationClicked = false
+      state.title2.circulationClicked = false
 
-      document.getElementById('renderOption1').checked = false
-      document.getElementById('renderOption2').checked = true
+      document.getElementById('title1RenderOption1').checked = true
+      document.getElementById('title2RenderOption1').checked = true
       document.getElementById('clearIssueFilterButton').classList.add('hide')
       document.getElementById('clearGeoFilterButton').classList.add('hide')
 
-      state.us1ChartRenderOption = 'percentOfPopulation'
-      renderIssueData()
-      renderGeoData(null, state)
+      state.title1.usChartRenderOption = 'percentOfPopulation'
+      renderIssueData(null, 'title1')
+      renderIssueData(null, 'title2')
+      renderGeoData(null, state.title1, 'title1')
+      renderGeoData(null, state.title1, 'title2')
 
       lineTip.hide()
 
@@ -373,19 +422,26 @@ const renderCharts = (data) => {
     window.addEventListener("awesomplete-selectcomplete", (e) => {
       const targetNode = e.target.id.split('-').pop()
                     state.titles[targetNode] = e.text.value
-                    console.log(state.titles)
                     resetCharts()
                     generateCharts()
                 }, false)
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
-        us1Chart.customUpdate = () => {
-          us1Chart.group(salesByState)
-          us1Chart.redraw()
+        function customUpdate (title) {
+          if (title === 'title1') {
+            us1Chart.group(salesByState)
+            us1Chart.redraw()
+          } else if (title === 'title2'){
+            us2Chart.group(title2SalesByState)
+            us2Chart.redraw()
+          }
         }
 
+        us1Chart.customUpdate = () => customUpdate('title1')
+        us2Chart.customUpdate = () => customUpdate('title2')
+
         us1Chart.legendables = () => {
-          if (state.circulationClicked) {
+          if (state.title1.circulationClicked) {
             const range = us1Chart.colors().range()
             const domain = us1Chart.colorDomain()
             const step = (domain[1] - domain[0]) / range.length
@@ -393,6 +449,23 @@ const renderCharts = (data) => {
             return range.map(function (d, i) {
                 const legendable = {name: `${formatNum(val, state)} - ${formatNum(val+step, state)}`, chart: us1Chart}
                 legendable.color = us1Chart.colorCalculator()(val)
+                val += step
+                return legendable
+            })
+          } else {
+            return []
+          }
+        }
+
+        us2Chart.legendables = () => {
+          if (state.title2.circulationClicked) {
+            const range = us2Chart.colors().range()
+            const domain = us2Chart.colorDomain()
+            const step = (domain[1] - domain[0]) / range.length
+            let val = domain[0]
+            return range.map(function (d, i) {
+                const legendable = {name: `${formatNum(val, state)} - ${formatNum(val+step, state)}`, chart: us2Chart}
+                legendable.color = us2Chart.colorCalculator()(val)
                 val += step
                 return legendable
             })
@@ -419,7 +492,7 @@ const renderCharts = (data) => {
                 )
                 .valueAccessor(kv => {
                   if (kv.value !== undefined) {
-                    if (state.us1ChartRenderOption === 'percentOfPopulation') {
+                    if (state.title1.usChartRenderOption === 'percentOfPopulation') {
                       return kv.value.sampled_total_sales / kv.value.state_population
                     } else {
                       return kv.value.sampled_total_sales
@@ -430,46 +503,47 @@ const renderCharts = (data) => {
                 .legend(dc.legend().x(getWidth('us1-chart') / 4.5).y(getHeight('us1-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
                 .on('pretransition', (chart) => {
                     chart.selectAll('path')
-                        .call(mapTip)
-                        .on('mouseover.mapTip', d => {
-                          if (!state.geoClicked) {
-                            mapTip.show(d)
-                            renderGeoData(d, state, salesByState.all().filter(item => item.key === d.properties.name)[0])
+                        .call(title1MapTip)
+                        .on('mouseover.title1MapTip', d => {
+                          if (!state.title1.geoClicked) {
+                            title1MapTip.show(d)
+                            renderGeoData(d, state.title1, 'title1', salesByState.all().filter(item => item.key === d.properties.name)[0])
                           }
                         })
-                        .on('mouseout.mapTip', d => {
-                          mapTip.hide(d)
-                          if(!state.geoClicked) {
-                            renderGeoData(null, state)
+                        .on('mouseout.title1MapTip', d => {
+                          title1MapTip.hide(d)
+                          if(!state.title1.geoClicked) {
+                            renderGeoData(null, state.title1, 'title1')
                           }
                         });
                 })
-                .on('renderlet.click', chart => {
+                .on('renderlet.title1Click', chart => {
                   chart.selectAll('path').on('click', selected => {
+                    console.log('title1 geoclick')
                     const selectedState = selected.properties.name
-                    if(state.circulationClicked && state.geoClicked) {
+                    if(state.title1.circulationClicked && state.title1.geoClicked) {
                       chart.filter(null)
                       chart.filter(selectedState)
-                      renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
-                    } else if (state.circulationClicked) {
-                      state.geoClicked = true
+                      renderGeoData(selectedState, state.title1, 'title1', salesByState.all().filter(item => item.key === selectedState)[0])
+                    } else if (state.title1.circulationClicked) {
+                      state.title1.geoClicked = true
                       const clearGeoFilterButton = document.getElementById('clearGeoFilterButton')
                       clearGeoFilterButton.classList.remove('hide')
                       clearGeoFilterButton.addEventListener('click', () => {
-                        renderGeoData(null, state)
+                        renderGeoData(null, state.title1, 'title1')
                         chart.filter(null)
-                        state.geoClicked = false
+                        state.title1.geoClicked = false
                         clearGeoFilterButton.classList.add('hide')
                       })
                       chart.filter(selectedState)
-                      renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
+                      renderGeoData(selectedState, state.title1, 'title1', salesByState.all().filter(item => item.key === selectedState)[0])
                     }
                   })
                 })
                 .on('filtered.geodata', (chart, filter) => {
                   if(chart.filter() === null) {
-                    renderGeoData(null, state)
-                    state.geoClicked = false
+                    renderGeoData(null, state.title1, 'title1')
+                    state.title1.geoClicked = false
                     clearGeoFilterButton.classList.add('hide')
                   }
                 })
@@ -498,7 +572,7 @@ const renderCharts = (data) => {
                 )
                 .valueAccessor(kv => {
                   if (kv.value !== undefined) {
-                    if (state.us2ChartRenderOption === 'percentOfPopulation') {
+                    if (state.title2.usChartRenderOption === 'percentOfPopulation') {
                       return kv.value.sampled_total_sales / kv.value.state_population
                     } else {
                       return kv.value.sampled_total_sales
@@ -509,46 +583,47 @@ const renderCharts = (data) => {
                 .legend(dc.legend().x(getWidth('us2-chart') / 4.5).y(getHeight('us2-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
                 .on('pretransition', (chart) => {
                     chart.selectAll('path')
-                        .call(mapTip)
-                        .on('mouseover.mapTip', d => {
-                          if (!state.geoClicked) {
-                            mapTip.show(d)
-                            renderGeoData(d, state, title2SalesByState.all().filter(item => item.key === d.properties.name)[0])
+                        .call(title2MapTip)
+                        .on('mouseover.title2MapTip', d => {
+                          if (!state.title2.geoClicked) {
+                            title2MapTip.show(d)
+                            renderGeoData(d, state.title2, 'title2', title2SalesByState.all().filter(item => item.key === d.properties.name)[0])
                           }
                         })
-                        .on('mouseout.mapTip', d => {
-                          mapTip.hide(d)
-                          if(!state.geoClicked) {
-                            renderGeoData(null, state)
+                        .on('mouseout.title2MapTip', d => {
+                          title2MapTip.hide(d)
+                          if(!state.title2.geoClicked) {
+                            renderGeoData(null, state.title2, 'title2')
                           }
                         });
                 })
-                .on('renderlet.click', chart => {
+                .on('renderlet.title2Click', chart => {
                   chart.selectAll('path').on('click', selected => {
+                    console.log('title2 geoclick')
                     const selectedState = selected.properties.name
-                    if(state.circulationClicked && state.geoClicked) {
+                    if(state.title2.circulationClicked && state.title2.geoClicked) {
                       chart.filter(null)
                       chart.filter(selectedState)
-                      renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
-                    } else if (state.circulationClicked) {
-                      state.geoClicked = true
+                      renderGeoData(selectedState, state.title2, 'title2', title2SalesByState.all().filter(item => item.key === selectedState)[0])
+                    } else if (state.title2.circulationClicked) {
+                      state.title2.geoClicked = true
                       const clearGeoFilterButton = document.getElementById('clearGeoFilterButton')
                       clearGeoFilterButton.classList.remove('hide')
                       clearGeoFilterButton.addEventListener('click', () => {
-                        renderGeoData(null, state)
+                        renderGeoData(null, state, 'title2')
                         chart.filter(null)
-                        state.geoClicked = false
+                        state.title2.geoClicked = false
                         clearGeoFilterButton.classList.add('hide')
                       })
                       chart.filter(selectedState)
-                      renderGeoData(selectedState, state, salesByState.all().filter(item => item.key === selectedState)[0])
+                      renderGeoData(selectedState, state.title2, 'title2', title2SalesByState.all().filter(item => item.key === selectedState)[0])
                     }
                   })
                 })
                 .on('filtered.geodata', (chart, filter) => {
                   if(chart.filter() === null) {
-                    renderGeoData(null, state)
-                    state.geoClicked = false
+                    renderGeoData(null, state.title2, 'title2')
+                    state.title2.geoClicked = false
                     clearGeoFilterButton.classList.add('hide')
                   }
                 })
@@ -571,71 +646,123 @@ const renderCharts = (data) => {
           .elasticY(true)
           .x(d3.scaleTime().domain([d3.min(title1CirculationByDate.all(), d => d.key), d3.max(title1CirculationByDate.all(), d => d.key)]))
           .xUnits(d3.timeYears)
+          .brushOn(false)
           .compose([
             dc.lineChart(composite)
               .group(title1CirculationByDate)
               .dimension(title1Dates)
               .colors(colorScales.blue[colorScales.blue.length - 1])
-              .valueAccessor(d => parseInt(d.value.issue_circulation)),
+              .valueAccessor(d => parseInt(d.value.issue_circulation))
+              .xyTipsOn(true),
               dc.lineChart(composite)
                 .group(title2CirculationByDate)
                 .dimension(title2Dates)
                 .colors(colorScales.red[colorScales.red.length - 1])
                 .valueAccessor(d => parseInt(d.value.issue_circulation))
           ])
-          .renderTitle(false)
           .on('pretransition.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
-              state.circulationClicked = true
+              const currentTitle = selected.data.value.canonical_title === state.title1.canonical_title ? 'title1' : 'title2'
+              console.log(currentTitle, 'circulation click')
+              state[currentTitle].circulationClicked = true
               const clearFilterButton = document.getElementById('clearIssueFilterButton')
               clearFilterButton.classList.remove('hide')
               clearFilterButton.addEventListener('click', composite.unClick)
-              renderIssueData(selected)
-              samplePeriodEnd.filter(d => {
-                const currentIssueDate = moment.utc(selected.x)
-                const periodEnding = moment.utc(d)
-                const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
-                if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
-                  Object.assign(state, {currentIssueDate, periodStart, periodEnding})
-                  return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
-                }
-              })
-
-              state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-              us1Chart.colorDomain(generateScale(salesByState))
-              us1Chart.customUpdate()
-            })
-          })
-          .on('renderlet.mouseover', (chart) => {
-            chart.selectAll('circle').on('mouseover.hover', (selected) => {
-              if (!state.circulationClicked) {
+              renderIssueData(selected, currentTitle)
+              if (currentTitle === 'title1') {
                 samplePeriodEnd.filter(d => {
                   const currentIssueDate = moment.utc(selected.x)
                   const periodEnding = moment.utc(d)
                   const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
                   if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
-                    console.log(currentIssueDate.format(), periodStart.format(), periodEnding.format())
+                    Object.assign(state.title1, {currentIssueDate, periodStart, periodEnding})
+                    return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+                  }
+                })
+
+                state.title1.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+                us1Chart.colorDomain(generateScale(salesByState))
+                us1Chart.customUpdate()
+              } else if (currentTitle === 'title2') {
+                title2SamplePeriodEnd.filter(d => {
+                  const currentIssueDate = moment.utc(selected.x)
+                  const periodEnding = moment.utc(d)
+                  const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
+                  if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
                     Object.assign(state, {currentIssueDate, periodStart, periodEnding})
                     return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
                   }
                 })
 
-                state.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+                state.title2.totalSalesByState = title2SalesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+                us2Chart.colorDomain(generateScale(title2SalesByState))
+                us2Chart.customUpdate()
+              }
+            })
+          })
+          .on('renderlet.mouseover', (chart) => {
+            chart.selectAll('circle').on('mouseover.hover', (selected) => {
+              const currentTitle = selected.data.value.canonical_title === state.title1.canonical_title ? 'title1' : 'title2'
+              if (!state.title1.circulationClicked && currentTitle === 'title1') {
+                samplePeriodEnd.filter(d => {
+                  const currentIssueDate = moment.utc(selected.x)
+                  const periodEnding = moment.utc(d)
+                  const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
+                  if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
+                    Object.assign(state.title2, {currentIssueDate, periodStart, periodEnding})
+                    return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+                  }
+                })
+
+                state.title1.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
                 us1Chart.colorDomain(generateScale(salesByState))
                 us1Chart.customUpdate()
+              } else if (!state.title2.circulationClicked && currentTitle === 'title2') {
+                title2SamplePeriodEnd.filter(d => {
+                  const currentIssueDate = moment.utc(selected.x)
+                  const periodEnding = moment.utc(d)
+                  const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') === 5 ? 0 : 6, 'day':1})
+                  if (currentIssueDate >= periodStart && currentIssueDate <= periodEnding) {
+                    Object.assign(state.title2, {currentIssueDate, periodStart, periodEnding})
+                    return currentIssueDate >= periodStart && currentIssueDate <= periodEnding
+                  }
+                })
+
+                state.title2.totalSalesByState = title2SalesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+
+                us2Chart.colorDomain(generateScale(title2SalesByState))
+                us2Chart.customUpdate()
               }
             })
 
             chart.selectAll('circle').on('mouseleave.hover', (selected) => {
-              if (!state.circulationClicked) {
+              const currentTitle = selected.data.value.canonical_title === state.title1.canonical_title ? 'title1' : 'title2'
+
+              if (!state.title1.circulationClicked && currentTitle === 'title1') {
                 samplePeriodEnd.filter(null)
                 us1Chart.colorDomain(generateScale(salesByState))
                 us1Chart.redraw()
+              } else if (!state.title2.circulationClicked && currentTitle === 'title2') {
+                title2SamplePeriodEnd.filter(null)
+                us2Chart.colorDomain(generateScale(title2SalesByState))
+                us2Chart.redraw()
               }
             })
 
           })
+          .on('pretransition', (chart) => {
+            // SECOND TITLE
+            chart.selectAll('circle')
+                .call(lineTip)
+                .on('mouseover.lineTip', (selected) => {
+                  lineTip.show(selected)
+                })
+                .on('mouseout.lineTip', (selected) => {
+                  lineTip.hide(selected)
+                })
+          })
+          .renderTitle(false)
           .render()
 
           /*
