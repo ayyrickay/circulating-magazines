@@ -107,7 +107,7 @@ body {
 .choropleth-instance {
 	display: flex;
 	flex-flow: column;
-	width: 45%;
+	width: 49%;
 	margin: 1em auto;
 	background-color: #fff;
   border: rgba(0,0,0,.3) 1px solid;
@@ -292,20 +292,33 @@ body {
 	border-bottom: #fff 3px solid;
 }
 
-.select-field {
-	grid-column: 1/6;
+.search-container{
+		display: flex;
+		align-items: center;
 }
 
-#title-select {
+.search-container h2 {
+	font-size: 1.3em;
+	min-width: 12em;
+}
+
+.select-field {
+	grid-column: 1/6;
+	display: flex;
+}
+
+.title-select {
 	background-color: transparent;
 	border-radius: 0;
 	border: none;
 	border-bottom: 2px solid #888;
 	padding: 0em 1em 0.2em 0.2em;
-	font-size: .8em;
+	font-size: 1em;
+	margin: 0 .75em;
+	color: rgba(0, 0, 0, .8);
 }
 
-#title-select:focus {
+.title-select:focus {
 	outline: none;
 }
 

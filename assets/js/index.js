@@ -57,6 +57,7 @@ function addAwesomeplete() {
   const selectorIds = Array.from(document.getElementById('select-field').childNodes).map((nodes, i) => `select-field-${i}`)
   selectorIds.forEach(selectorId => {
     const selector = document.getElementById(selectorId)
+    selector.classList.add('title-select')
     new Awesomplete(selector, {
       autoFirst: true,
       list: [{"value":"4mco","label":"4-Most Comics"},{"value":"acde","label":"Actual Detective Stories"},{"value":"acfi","label":"Ace Fiction Group"},{"value":"achi","label":"Ace High"},{"value":"acst","label":"Action Stories"},{"value":"adve","label":"Adventure"},{"value":"alam","label":"All American Comics Group"},{"value":"amco","label":"American Comics Group"},{"value":"amfi","label":"American Fiction Group"},{"value":"amma","label":"American Magazine"},{"value":"amme","label":"American Mercury"},{"value":"amst","label":"Amazing Stories"},{"value":"aral","label":"Argosy All-Story"},{"value":"arcg","label":"Archie Comic Group"},{"value":"arch","label":"Archie Comics"},{"value":"arco","label":"Argosy Combination"},{"value":"atmo","label":"Atlantic Monthly"},{"value":"batm","label":"Batman"},{"value":"beho","label":"Better Homes and Gardens"},{"value":"blbo","label":"Blue Book Magazine"},{"value":"blma","label":"Black Mask"},{"value":"bnbr","label":"B'nai B'rith Magazine"},{"value":"brst","label":"Breezy Stories"},{"value":"brth","label":"Bronze Thrills"},{"value":"cama","label":"Captain Marvel Adventures"},{"value":"cent","label":"Century"},{"value":"clma","label":"Clayton Magazines"},{"value":"clmab","label":"Clayton Magazines (bimonthly)"},{"value":"cohu","label":"College Humor"},{"value":"coll","label":"Collier's"},{"value":"colo","label":"Color"},{"value":"conf","label":"Confidential"},{"value":"copa","label":"Comics on Parade"},{"value":"cosm","label":"Cosmopolitan"},{"value":"crco","label":"Crime Confessions"},{"value":"crde","label":"Crime Detective"},{"value":"cudi","label":"Cupid's Diary"},{"value":"deco","label":"Dell Comic Group"},{"value":"dede","label":"Dell Detective Group"},{"value":"defi","label":"Dell Fiction Group"},{"value":"detco","label":"Detective Comics Group"},{"value":"dewo","label":"Dell Women's Group"},{"value":"dial","label":"Dial"},{"value":"doac","label":"Double Action Group"},{"value":"dobe","label":"Down Beat"},{"value":"drwo","label":"Dream World"},{"value":"dyde","label":"Dynamic Detective"},{"value":"ebon","label":"Ebony"},{"value":"esqu","label":"Esquire"},{"value":"ever","label":"Everybody's"},{"value":"feco","label":"Feature Comics"},{"value":"fiho","label":"Fiction House"},{"value":"fist","label":"Field and Stream"},{"value":"flac","label":"Flying Aces"},{"value":"foco","label":"Fox Comic Group"},{"value":"fome","label":"For Men Only"},{"value":"forb","label":"Forbes"},{"value":"fort","label":"Fortune"},{"value":"foru","label":"Forum"},{"value":"fron","label":"Frontier"},{"value":"gude","label":"Guide Detective Unit"},{"value":"haba","label":"Harper's Bazaar"},{"value":"harp","label":"Harper's"},{"value":"hear","label":"Hearst's"},{"value":"hit","label":"Hit"},{"value":"jet","label":"Jet"},{"value":"jetr","label":"Jewish Tribune"},{"value":"judg","label":"Judge"},{"value":"ken","label":"Ken"},{"value":"laff","label":"Laff"},{"value":"laho","label":"Ladies' Home Journal"},{"value":"libe","label":"Liberty"},{"value":"life","label":"Life"},{"value":"lisn","label":"Snappy Stories Group"},{"value":"loaro","label":"Love and Romance"},{"value":"look","label":"Look"},{"value":"loro","label":"Love Romances"},{"value":"maco","label":"Marvel Comic Group"},{"value":"mans","label":"Man's Magazine"},{"value":"mcca","label":"McCall's"},{"value":"mccl","label":"McClure's"},{"value":"metr","label":"Metropolitan"},{"value":"mimo","label":"Mickey Mouse Magazine"},{"value":"mosh","label":"Movie Show"},{"value":"muma","label":"Munsey's Magazine"},{"value":"muns","label":"Munsey Combination"},{"value":"naco","label":"National Comics Group"},{"value":"nage","label":"National Geographic Magazine"},{"value":"nati","label":"Nation"},{"value":"news","label":"Newsweek"},{"value":"neyo","label":"New Yorker"},{"value":"nwst","label":"North West Stories"},{"value":"phcu","label":"Physical Culture"},{"value":"play","label":"Playboy"},{"value":"popu","label":"Popular Publications"},{"value":"raro","label":"Ranch Romances"},{"value":"redb","label":"Redbook"},{"value":"saev","label":"Saturday Evening Post"},{"value":"scin","label":"Science and Invention"},{"value":"scma","label":"Scribner's Magazine"},{"value":"scri","label":"Script"},{"value":"shst","label":"Short Stories"},{"value":"skri","label":"Sky Riders"},{"value":"smse","label":"Smart Set"},{"value":"snst","label":"Snappy Stories"},{"value":"spil","label":"Sports Illustrated"},{"value":"stag","label":"Stag"},{"value":"stsm","label":"Street and Smith Combination"},{"value":"supe","label":"Superman"},{"value":"swst","label":"Sweetheart Stories"},{"value":"tan","label":"Tan"},{"value":"tepu","label":"Teck Publications Fiction Combination"},{"value":"teta","label":"Telling Tales"},{"value":"thgr","label":"Thrilling Group"},{"value":"time","label":"Time"},{"value":"trcom","label":"True Comics"},{"value":"trix","label":"Triple-X"},{"value":"trma","label":"Marriage Stories"},{"value":"vafa","label":"Vanity Fair"},{"value":"vogu","label":"Vogue"},{"value":"wabi","label":"War Birds"},{"value":"wano","label":"War Novels"},{"value":"wast","label":"War Stories"},{"value":"weta","label":"Weird Tales"},{"value":"woho","label":"Woman's Home Companion"},{"value":"yoma","label":"C.H. Young Publishing Group"}],
@@ -78,8 +79,10 @@ title2Selector.value = 'New Yorker'
 // Helper Functions
 // ****************************************************
 function changeRenderOption(event, title) {
+  console.log(state[title])
   if (state[title].circulationClicked) {
-    state[title].ChartRenderOption = event.target.value
+    console.log('circulation was clicked')
+    state[title].usChartRenderOption = event.target.value
     title === 'title1' ? us1Chart.customUpdate() : us2Chart.customUpdate()
     dc.redrawAll()
   } else {
@@ -105,18 +108,19 @@ function getHeight(element) {
   }
 }
 
-function generateScale(chartGroup) {
-  if (state.title1.usChartRenderOption === 'percentOfPopulation') {
+function generateScale(chartGroup, title) {
+  if (state[title].usChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
-    return [0, getTopValue(chartGroup)]
+    return [0, getTopValue(chartGroup, title)]
   }
 }
 
 const getTopValue = (group) => d3.max(group.all(), d => {
-  if (state.title1.usChartRenderOption === 'percentOfPopulation') {
+  if (state[title].usChartRenderOption === 'percentOfPopulation') {
     return d.value.sampled_total_sales / d.value.state_population
   } else {
+    console.log(d.value.sampled_total_sales)
     return d.value.sampled_total_sales
   }
 })
@@ -344,7 +348,6 @@ const renderCharts = (data) => {
     .attr('class', 'tooltip')
     .offset([-10, 0])
     .html((d) => {
-      console.log('title1maptip', state.title1)
       return `
       <div class="tooltip-data">
         <h4 class="key">State</h4>
@@ -395,17 +398,47 @@ const renderCharts = (data) => {
         `
       })
 
-    const resetCharts = () => {
+    function resetChart (title) {
+      console.log(title)
+      state[title].circulationClicked = false
+      state[title].usChartRenderOption = 'percentOfPopulation'
+      document.getElementById(`${title}RenderOption1`).checked = true
+      document.getElementById(`${title}ClearGeoFilterButton`).classList.add('hide')
+      document.getElementById('clearIssueFilterButton').classList.add('hide')
+
+      renderIssueData(null, title)
+      renderGeoData(null, state[title], title)
+
+      lineTip.hide()
+
+      if(title === 'title1') {
+        us1Chart.filter(null)
+        us1Chart.customUpdate()
+        us1Chart.colorDomain(generateScale(salesByState, 'title1'))
+        us1Chart.redraw()
+      } else if (title === 'title2') {
+        us2Chart.filter(null)
+        us2Chart.customUpdate()
+        us2Chart.colorDomain(generateScale(title2SalesByState, 'title2'))
+        us2Chart.redraw()
+      }
+    }
+
+    function resetCharts () {
       samplePeriodEnd.filter(null)
       state.title1.circulationClicked = false
       state.title2.circulationClicked = false
 
+      document.getElementById('clearIssueFilterButton').classList.add('hide')
       document.getElementById('title1RenderOption1').checked = true
       document.getElementById('title2RenderOption1').checked = true
-      document.getElementById('clearIssueFilterButton').classList.add('hide')
-      document.getElementById('clearGeoFilterButton').classList.add('hide')
+      document.getElementById('title1ClearGeoFilterButton').classList.add('hide')
+      document.getElementById('title2ClearGeoFilterButton').classList.add('hide')
+
 
       state.title1.usChartRenderOption = 'percentOfPopulation'
+      state.title2.usChartRenderOption = 'percentOfPopulation'
+
       renderIssueData(null, 'title1')
       renderIssueData(null, 'title2')
       renderGeoData(null, state.title1, 'title1')
@@ -415,14 +448,19 @@ const renderCharts = (data) => {
 
       us1Chart.filter(null)
       us1Chart.customUpdate()
-      us1Chart.colorDomain(generateScale(salesByState))
+      us1Chart.colorDomain(generateScale(salesByState, 'title1'))
       us1Chart.redraw()
+
+      us2Chart.filter(null)
+      us2Chart.customUpdate()
+      us2Chart.colorDomain(generateScale(title2SalesByState, 'title2'))
+      us2Chart.redraw()
     }
 
     window.addEventListener("awesomplete-selectcomplete", (e) => {
       const targetNode = e.target.id.split('-').pop()
                     state.titles[targetNode] = e.text.value
-                    resetCharts()
+                    resetChart(`title${parseInt(targetNode) + 1}`)
                     generateCharts()
                 }, false)
 
@@ -447,7 +485,7 @@ const renderCharts = (data) => {
             const step = (domain[1] - domain[0]) / range.length
             let val = domain[0]
             return range.map(function (d, i) {
-                const legendable = {name: `${formatNum(val, state)} - ${formatNum(val+step, state)}`, chart: us1Chart}
+                const legendable = {name: `${formatNum(val, state, 'title1')} - ${formatNum(val+step, state, 'title1')}`, chart: us1Chart}
                 legendable.color = us1Chart.colorCalculator()(val)
                 val += step
                 return legendable
@@ -464,7 +502,7 @@ const renderCharts = (data) => {
             const step = (domain[1] - domain[0]) / range.length
             let val = domain[0]
             return range.map(function (d, i) {
-                const legendable = {name: `${formatNum(val, state)} - ${formatNum(val+step, state)}`, chart: us2Chart}
+                const legendable = {name: `${formatNum(val, state, 'title2')} - ${formatNum(val+step, state, 'title2')}`, chart: us2Chart}
                 legendable.color = us2Chart.colorCalculator()(val)
                 val += step
                 return legendable
@@ -479,7 +517,7 @@ const renderCharts = (data) => {
                 .dimension(stateRegion)
                 .group(salesByState)
                 .colors(d3.scaleQuantize().range(colorScales.blue))
-                .colorDomain(generateScale(salesByState))
+                .colorDomain(generateScale(salesByState, 'title1'))
                 .colorAccessor(d => {
                   return d ? d : 0
                 })
@@ -519,7 +557,6 @@ const renderCharts = (data) => {
                 })
                 .on('renderlet.title1Click', chart => {
                   chart.selectAll('path').on('click', selected => {
-                    console.log('title1 geoclick')
                     const selectedState = selected.properties.name
                     if(state.title1.circulationClicked && state.title1.geoClicked) {
                       chart.filter(null)
@@ -527,7 +564,7 @@ const renderCharts = (data) => {
                       renderGeoData(selectedState, state.title1, 'title1', salesByState.all().filter(item => item.key === selectedState)[0])
                     } else if (state.title1.circulationClicked) {
                       state.title1.geoClicked = true
-                      const clearGeoFilterButton = document.getElementById('clearGeoFilterButton')
+                      const clearGeoFilterButton = document.getElementById('title1ClearGeoFilterButton')
                       clearGeoFilterButton.classList.remove('hide')
                       clearGeoFilterButton.addEventListener('click', () => {
                         renderGeoData(null, state.title1, 'title1')
@@ -543,6 +580,7 @@ const renderCharts = (data) => {
                 .on('filtered.geodata', (chart, filter) => {
                   if(chart.filter() === null) {
                     renderGeoData(null, state.title1, 'title1')
+                    const clearGeoFilterButton = document.getElementById('title1ClearGeoFilterButton')
                     state.title1.geoClicked = false
                     clearGeoFilterButton.classList.add('hide')
                   }
@@ -559,7 +597,7 @@ const renderCharts = (data) => {
                 .dimension(title2StateRegion)
                 .group(title2SalesByState)
                 .colors(d3.scaleQuantize().range(colorScales.red))
-                .colorDomain(generateScale(title2SalesByState))
+                .colorDomain(generateScale(title2SalesByState, 'title2'))
                 .colorAccessor(d => {
                   return d ? d : 0
                 })
@@ -580,7 +618,7 @@ const renderCharts = (data) => {
                   }
                 })
                 .renderTitle(false)
-                .legend(dc.legend().x(getWidth('us2-chart') / 4.5).y(getHeight('us2-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
+                .legend(dc.legend().x(getWidth('us2-chart') / 4.7).y(getHeight('us2-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us2-chart') / 10).legendWidth(getWidth('us2-chart') / 3))
                 .on('pretransition', (chart) => {
                     chart.selectAll('path')
                         .call(title2MapTip)
@@ -607,7 +645,7 @@ const renderCharts = (data) => {
                       renderGeoData(selectedState, state.title2, 'title2', title2SalesByState.all().filter(item => item.key === selectedState)[0])
                     } else if (state.title2.circulationClicked) {
                       state.title2.geoClicked = true
-                      const clearGeoFilterButton = document.getElementById('clearGeoFilterButton')
+                      const clearGeoFilterButton = document.getElementById('title2ClearGeoFilterButton')
                       clearGeoFilterButton.classList.remove('hide')
                       clearGeoFilterButton.addEventListener('click', () => {
                         renderGeoData(null, state, 'title2')
@@ -623,6 +661,7 @@ const renderCharts = (data) => {
                 .on('filtered.geodata', (chart, filter) => {
                   if(chart.filter() === null) {
                     renderGeoData(null, state.title2, 'title2')
+                    const clearGeoFilterButton = document.getElementById('title2ClearGeoFilterButton')
                     state.title2.geoClicked = false
                     clearGeoFilterButton.classList.add('hide')
                   }
@@ -681,7 +720,7 @@ const renderCharts = (data) => {
                 })
 
                 state.title1.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-                us1Chart.colorDomain(generateScale(salesByState))
+                us1Chart.colorDomain(generateScale(salesByState, 'title1'))
                 us1Chart.customUpdate()
               } else if (currentTitle === 'title2') {
                 title2SamplePeriodEnd.filter(d => {
@@ -695,7 +734,7 @@ const renderCharts = (data) => {
                 })
 
                 state.title2.totalSalesByState = title2SalesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-                us2Chart.colorDomain(generateScale(title2SalesByState))
+                us2Chart.colorDomain(generateScale(title2SalesByState, 'title2'))
                 us2Chart.customUpdate()
               }
             })
@@ -716,7 +755,7 @@ const renderCharts = (data) => {
 
                 state.title1.totalSalesByState = salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
-                us1Chart.colorDomain(generateScale(salesByState))
+                us1Chart.colorDomain(generateScale(salesByState, 'title1'))
                 us1Chart.customUpdate()
               } else if (!state.title2.circulationClicked && currentTitle === 'title2') {
                 title2SamplePeriodEnd.filter(d => {
@@ -731,7 +770,7 @@ const renderCharts = (data) => {
 
                 state.title2.totalSalesByState = title2SalesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
 
-                us2Chart.colorDomain(generateScale(title2SalesByState))
+                us2Chart.colorDomain(generateScale(title2SalesByState, 'title2'))
                 us2Chart.customUpdate()
               }
             })
@@ -741,11 +780,11 @@ const renderCharts = (data) => {
 
               if (!state.title1.circulationClicked && currentTitle === 'title1') {
                 samplePeriodEnd.filter(null)
-                us1Chart.colorDomain(generateScale(salesByState))
+                us1Chart.colorDomain(generateScale(salesByState, 'title1'))
                 us1Chart.redraw()
               } else if (!state.title2.circulationClicked && currentTitle === 'title2') {
                 title2SamplePeriodEnd.filter(null)
-                us2Chart.colorDomain(generateScale(title2SalesByState))
+                us2Chart.colorDomain(generateScale(title2SalesByState, 'title2'))
                 us2Chart.redraw()
               }
             })
