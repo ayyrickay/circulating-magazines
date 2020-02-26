@@ -79,9 +79,7 @@ title2Selector.value = 'New Yorker'
 // Helper Functions
 // ****************************************************
 function changeRenderOption(event, title) {
-  console.log(state[title])
   if (state[title].circulationClicked) {
-    console.log('circulation was clicked')
     state[title].usChartRenderOption = event.target.value
     title === 'title1' ? us1Chart.customUpdate() : us2Chart.customUpdate()
     dc.redrawAll()
@@ -120,7 +118,6 @@ const getTopValue = (group) => d3.max(group.all(), d => {
   if (state[title].usChartRenderOption === 'percentOfPopulation') {
     return d.value.sampled_total_sales / d.value.state_population
   } else {
-    console.log(d.value.sampled_total_sales)
     return d.value.sampled_total_sales
   }
 })
@@ -399,7 +396,6 @@ const renderCharts = (data) => {
       })
 
     function resetChart (title) {
-      console.log(title)
       state[title].circulationClicked = false
       state[title].usChartRenderOption = 'percentOfPopulation'
       document.getElementById(`${title}RenderOption1`).checked = true
@@ -555,7 +551,7 @@ const renderCharts = (data) => {
                           }
                         });
                 })
-                .on('renderlet.title1Click', chart => {
+                .on('renderlet.click', chart => {
                   chart.selectAll('path').on('click', selected => {
                     const selectedState = selected.properties.name
                     if(state.title1.circulationClicked && state.title1.geoClicked) {
@@ -635,9 +631,8 @@ const renderCharts = (data) => {
                           }
                         });
                 })
-                .on('renderlet.title2Click', chart => {
+                .on('renderlet.click', chart => {
                   chart.selectAll('path').on('click', selected => {
-                    console.log('title2 geoclick')
                     const selectedState = selected.properties.name
                     if(state.title2.circulationClicked && state.title2.geoClicked) {
                       chart.filter(null)
@@ -702,7 +697,6 @@ const renderCharts = (data) => {
           .on('pretransition.click', (chart) => {
             chart.selectAll('circle').on('click', (selected) => {
               const currentTitle = selected.data.value.canonical_title === state.title1.canonical_title ? 'title1' : 'title2'
-              console.log(currentTitle, 'circulation click')
               state[currentTitle].circulationClicked = true
               const clearFilterButton = document.getElementById('clearIssueFilterButton')
               clearFilterButton.classList.remove('hide')
