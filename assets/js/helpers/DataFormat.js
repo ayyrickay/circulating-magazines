@@ -48,8 +48,8 @@ export function toMetric(x) {
   return "1T+";
 }
 
-export function formatNum(num, state) {
-  if (state.us1ChartRenderOption === 'percentOfPopulation') {
+export function formatNum(num, state, title) {
+  if (state[title].usChartRenderOption === 'percentOfPopulation') {
     return `${(num*100).toFixed(2)}%`
   } else {
     return toMetric(num)
