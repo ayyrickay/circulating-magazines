@@ -325,3 +325,15 @@ body {
 .hide {
 	display: none;
 }
+
+.bg-grey {
+	background-color: #607D8B;
+}
+
+.bg-blue {
+	background-color: #2196F3;
+}
+
+.bg-red {
+	background-color: #E91E63;
+}
