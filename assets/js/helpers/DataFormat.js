@@ -1,8 +1,28 @@
 // ****************************************************
 // Formatting
 // ****************************************************
+import {stateCodes } from '../../data/constants.js'
+
 export const renderNumberWithCommas = (number) => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+}
+
+export function titleCleanup (geo, circulation) {
+  const cleanGeodata = geo.filter(data => {
+    if (!data) {return false}
+    return stateCodes[data.state_region]
+  })
+
+  const cleanCirculationData = circulation.map(title => {
+    try {
+      title.actual_issue_date = moment.utc(title.actual_issue_date)
+      return title
+    } catch (e) {
+      console.error(e, title.actual_issue_date)
+    }
+  })
+
+  return [cleanGeodata, cleanCirculationData]
 }
 
 export function renderDateInUTC(date) {
