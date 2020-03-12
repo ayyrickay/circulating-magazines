@@ -307,6 +307,20 @@ body {
 	display: flex;
 }
 
+.select-element {
+	display: flex;
+  align-items: center;
+	margin-right: 1em;
+}
+
+.select-label {
+	background-color: #607D8B;
+  width: 1em;
+  height: 1em;
+  display: block;
+  border-radius: 50%;
+}
+
 .title-select {
 	background-color: transparent;
 	border-radius: 0;
@@ -318,10 +332,31 @@ body {
 	color: rgba(0, 0, 0, .8);
 }
 
+.clear {
+	/* color: rgba(0, 0, 0, .6); */
+	color: #E91E63;
+}
+
+.clear:hover{
+	cursor: pointer;
+}
+
 .title-select:focus {
 	outline: none;
 }
 
 .hide {
 	display: none;
+}
+
+.bg-grey {
+	background-color: #607D8B;
+}
+
+.bg-blue {
+	background-color: #2196F3;
+}
+
+.bg-red {
+	background-color: #E91E63;
 }

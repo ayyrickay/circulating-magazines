@@ -25,7 +25,7 @@ for (let i = 0; i < titles.length; i++) {
 console.log(data)
 console.log('length of data is', data.length)
 
-fs.writeFile(path.join(__dirname, '/../clean/titles-list.json'), JSON.stringify(data), 'utf8', (err) => {
+fs.writeFile(path.join(__dirname, '/../titles-list.js'), `export const titleList = ${JSON.stringify(data)}`, 'utf8', (err) => {
   if (err) throw err
   console.log('Successfully joined data')
 })
