@@ -65,7 +65,7 @@ export const colorScales = {
   blue: ['#BBDEFB', '#64B5F6', '#2196F3', '#1976D2', '#0D47A1'],
   teal: ['#B2DFDB', '#4DB6AC', '#009688', '#00796B', '#004D40'],
   purple: ['#E1BEE7', '#BA68C8', '#9C27B0', '#7B1FA2', '#4A148C'],
-  grey: []
+  grey: ['#CFD8DC', '#90A4AE', '#607D8B', '#455A64', '#263238']
 }
 
 export const notes = {

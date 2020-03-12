@@ -8,7 +8,7 @@ for (const item of array) {
   if(!map.has(item.state_region)){
     map.set(item.state_region, true)
     result.push(Object.assign({}, item, {
-      "state_population": 0,
+      "state_population": 1,
       "sampled_mail_subscriptions":0,
       "sampled_single_copy_sales":0,
       "sampled_total_sales":0,

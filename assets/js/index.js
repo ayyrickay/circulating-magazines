@@ -41,16 +41,28 @@ function generateSelect () {
 
   while (i < appState.maxCompare) {
     const selectField = document.getElementById('select-field')
-    const currentNodes = selectField.childNodes
     const selectName = `select-field-${i}`
+    const selectElement = document.createElement('div')
+    selectElement.classList.add('select-element')
     const label = document.createElement('label')
     label.htmlFor = selectName
+    label.classList.add('select-label', i === 0 ? 'bg-blue' : 'bg-red')
     const input = document.createElement('input')
     input.name = selectName
     input.id = selectName
     input.placeholder = "Select a title"
-    label.appendChild(input)
-    selectField.appendChild(label)
+
+    const clear = document.createElement('div')
+    clear.innerHTML="&#10006;"
+    clear.id = `clear-select-${i}`
+    clear.classList.add('hide', 'clear')
+
+    selectElement.appendChild(label)
+    selectElement.appendChild(input)
+    if (i > 0) {
+      selectElement.appendChild(clear)
+    }
+    selectField.appendChild(selectElement)
     i++
   }
 }
@@ -82,9 +94,9 @@ titleSelector.value = 'Saturday Evening Post'
 // ****************************************************
 // Helper Functions
 // ****************************************************
-function changeRenderOption(event, title) {
+function changeRenderOption(renderOption, title) {
   if (appState[title].circulationClicked) {
-    appState[title].usChartRenderOption = event.target.value
+    appState[title].usChartRenderOption = renderOption
     appState[title].usChart.customUpdate()
     dc.redrawAll()
   } else {
@@ -111,14 +123,16 @@ function getHeight(element) {
 }
 
 function generateScale(chartGroup, title) {
-  if (appState[title].usChartRenderOption === 'percentOfPopulation') {
+  if (getTopValue(chartGroup, title) === 0) {
+    return [0, 1000]
+  } else if(appState[title].usChartRenderOption === 'percentOfPopulation') {
     return [0, 1]
   } else {
     return [0, getTopValue(chartGroup, title)]
   }
 }
 
-const getTopValue = (group) => d3.max(group.all(), d => {
+const getTopValue = (group, title) => d3.max(group.all(), d => {
   if (appState[title].usChartRenderOption === 'percentOfPopulation') {
     return d.value.sampled_total_sales / d.value.state_population
   } else {
@@ -134,31 +148,26 @@ document.getElementById('reset-button').addEventListener('click', () => {
   dc.redrawAll()
 })
 
-// document.addEventListener('awesomplete-selectcomplete').
-document.getElementById('title1RenderOption1').addEventListener('change', (ev) => changeRenderOption(ev, 'title1'))
-document.getElementById('title1RenderOption2').addEventListener('change', (ev) => changeRenderOption(ev, 'title1'))
-document.getElementById('title2RenderOption1').addEventListener('change', (ev) => changeRenderOption(ev, 'title2'))
-document.getElementById('title2RenderOption2').addEventListener('change', (ev) => changeRenderOption(ev, 'title2'))
+// document.addEventListener('awesomeplete-selectcomplete').
+document.getElementById('title1RenderOption1').addEventListener('change', (ev) => changeRenderOption(ev.target.value, 'title1'))
+document.getElementById('title1RenderOption2').addEventListener('change', (ev) => changeRenderOption(ev.target.value, 'title1'))
+document.getElementById('title2RenderOption1').addEventListener('change', (ev) => changeRenderOption(ev.target.value, 'title2'))
+document.getElementById('title2RenderOption2').addEventListener('change', (ev) => changeRenderOption(ev.target.value, 'title2'))
 
 window.onresize = (event) => {
   composite.width(getWidth('line-chart') - 50).height(getHeight('line-chart') - 50).transitionDuration(0)
-  us1Chart
-    .projection(d3.geoAlbersUsa()
-      .scale(Math.min(getWidth('us1-chart') * 1.5, getHeight('us1-chart') * 1.5))
-      .translate([getWidth('us1-chart') / 8, getHeight('us1-chart') / 2.5])
-    )
-    .transitionDuration(0)
-    .width(getWidth('us1-chart') - 200)
-    .height(getHeight('us1-chart') - 50)
+  const charts = ['us1-chart', 'us2-chart']
 
-    us2Chart
+  charts.forEach((chart, index) => {
+    appState[titleNames[index]].usChart
       .projection(d3.geoAlbersUsa()
-        .scale(Math.min(getWidth('us2-chart') * 1.5, getHeight('us2-chart') * 1.5))
-        .translate([getWidth('us2-chart') / 8, getHeight('us2-chart') / 2.5])
+        .scale(Math.min(getWidth(chart) * 1.5, getHeight(chart) * 1.5))
+        .translate([getWidth(chart) / 8, getHeight(chart) / 2.5])
       )
       .transitionDuration(0)
-      .width(getWidth('us2-chart') - 200)
-      .height(getHeight('us2-chart') - 50)
+      .width(getWidth(chart) - 200)
+      .height(getHeight(chart) - 50)
+  })
 
   dc.renderAll()
   us1Chart.transitionDuration(750)
@@ -171,11 +180,29 @@ window.onresize = (event) => {
 // ****************************************************
 
 const renderCharts = (data) => {
-  console.log(processData(data[0], data[1]))
   appState.title1 = Object.assign({}, appState.title1, processData(data[0], data[1]))
   appState.title1.totalSalesByState = appState.title1.salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
   appState.title2 = Object.assign({}, appState.title2, processData(data[2], data[3]))
   appState.title2.totalSalesByState = appState.title2.salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+
+  function updateSingleTitle (title, data) {
+    const [geodata, circulationData] = titleCleanup(data[0], data[1])
+
+    appState[title].titleCirculation.remove((d, i) => d)
+    appState[title].titleCirculation.add(circulationData)
+    appState[title].titleGeodata.remove((d, i) => d)
+    appState[title].titleGeodata.add(geodata)
+    appState[title].totalSalesByState = appState[title].salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
+
+    renderStaticContent(title)
+    appState[title].usChart.customUpdate()
+    appState[title].usChart.render()
+
+    const lineCharts = composite.generateLineCharts()
+    composite
+      .compose(lineCharts)
+      .render()
+  }
 
   // ****************************************************
   // Static Render Data
@@ -183,7 +210,6 @@ const renderCharts = (data) => {
   function renderStaticContent (title) {
     // Renders static information for each title
     const {canonical_title, titles_included} = appState[title].circulationByDate.all()[0].value
-    console.log('rendering static content', canonical_title, titles_included)
 
     const editorNote = notes[appState.titles[title === 'title1' ? 0 : 1].toUpperCase()]
     document.getElementById(`${title}-editorial-note`).textContent = editorNote
@@ -261,15 +287,16 @@ const renderCharts = (data) => {
       appState[title].usChartRenderOption = 'percentOfPopulation'
       document.getElementById(`${title}RenderOption1`).checked = true
       document.getElementById(`${title}ClearGeoFilterButton`).classList.add('hide')
-      document.getElementById('clearIssueFilterButton').classList.add('hide')
 
+      if(!appState.title1.circulationClicked && !appState.title2.circulationClicked) {
+        document.getElementById('clearIssueFilterButton').classList.add('hide')
+      }
       renderIssueData(null, title)
       renderGeoData(null, appState[title], title)
 
       lineTip.hide()
       appState[title].usChart.filter(null)
       appState[title].usChart.customUpdate()
-      appState[title].usChart.colorDomain(generateScale(appState[title].salesByState, 'title1'))
       appState[title].usChart.redraw()
     }
 
@@ -290,21 +317,40 @@ const renderCharts = (data) => {
 
         appState[title].usChart.filter(null)
         appState[title].usChart.customUpdate()
-        appState[title].usChart.colorDomain(generateScale(appState[title].salesByState, title))
         appState[title].usChart.redraw()
       })
     }
 
+    const clearSelect = document.getElementById('clear-select-1')
+
     window.addEventListener("awesomplete-selectcomplete", (e) => {
       const targetNode = e.target.id.split('-').pop()
-                    appState.titles[targetNode] = e.text.value
-                    resetChart(`title${parseInt(targetNode) + 1}`)
-                    generateCharts()
-                }, false)
+      const currentTitle = `title${parseInt(targetNode) + 1}`
+      appState.titles[targetNode] = e.text.value
+      if (targetNode > 0) { clearSelect.classList.remove('hide') }
+      resetChart(`title${parseInt(targetNode) + 1}`)
+
+      const data = [`assets/data/clean/${appState.titles[targetNode]}-geodata.json`, `assets/data/clean/${appState.titles[targetNode]}-circulation.json`]
+      Promise.all(data.map(url => d3.json(url)))
+      .then(data => updateSingleTitle(currentTitle, data))
+    }, false)
+
+    clearSelect.onclick = () => {
+      appState.titles[1] = 'null'
+      document.getElementById('select-field-1').value = ""
+      changeRenderOption('null', 'title2')
+      clearSelect.classList.add('hide')
+      resetChart('title2')
+
+      const data = [`assets/data/clean/null-geodata.json`, `assets/data/clean/null-circulation.json`]
+      Promise.all(data.map(url => d3.json(url)))
+      .then(data => updateSingleTitle('title2', data))
+    }
 
     d3.json("./assets/geo/us-states.json").then((statesJson) => {
         function customUpdate (title) {
           appState[title].usChart.group(appState[title].salesByState)
+          appState[title].usChart.colorDomain(generateScale(appState[title].salesByState, title))
           appState[title].usChart.redraw()
         }
 
@@ -345,171 +391,171 @@ const renderCharts = (data) => {
           }
         }
 
-        us1Chart.width(us1Width + 16)
-                .height(us1Height)
-                .dimension(appState.title1.stateRegion)
-                .group(appState.title1.salesByState)
-                .colors(d3.scaleQuantize().range(colorScales.blue))
-                .colorDomain(generateScale(appState.title1.salesByState, 'title1'))
-                .colorAccessor(d => {
-                  return d ? d : 0
-                })
-                .overlayGeoJson(statesJson.features, "state", d => {
-                  return d.properties.name
-                })
-                .projection(d3.geoAlbersUsa()
-                  .scale(Math.min(getWidth('us1-chart') * 1.5, getHeight('us1-chart') * 1.5))
-                  .translate([getWidth('us1-chart') / 8, getHeight('us1-chart') / 2.5])
-                )
-                .valueAccessor(kv => {
-                  if (kv.value !== undefined) {
-                    if (appState.title1.usChartRenderOption === 'percentOfPopulation') {
-                      return kv.value.sampled_total_sales / kv.value.state_population
-                    } else {
-                      return kv.value.sampled_total_sales
-                    }
-                  }
-                })
-                .renderTitle(false)
-                .legend(dc.legend().x(getWidth('us1-chart') / 4.5).y(getHeight('us1-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
-                .on('pretransition', (chart) => {
-                    chart.selectAll('path')
-                        .call(title1MapTip)
-                        .on('mouseover.title1MapTip', d => {
-                          if (!appState.title1.geoClicked) {
-                            title1MapTip.show(d)
-                            renderGeoData(d, appState.title1, 'title1', appState.title1.salesByState.all().filter(item => item.key === d.properties.name)[0])
-                          }
-                        })
-                        .on('mouseout.title1MapTip', d => {
-                          title1MapTip.hide(d)
-                          if(!appState.title1.geoClicked) {
-                            renderGeoData(null, appState.title1, 'title1')
-                          }
-                        });
-                })
-                .on('renderlet.click', chart => {
-                  chart.selectAll('path').on('click', selected => {
-                    const selectedState = selected.properties.name
-                    if(appState.title1.circulationClicked && appState.title1.geoClicked) {
-                      console.log('derp')
-                      chart.filter(null)
-                      chart.filter(selectedState)
-                      renderGeoData(selectedState, appState.title1, 'title1', appState.title1.salesByState.all().filter(item => item.key === selectedState)[0])
-                    } else if (appState.title1.circulationClicked) {
-                      console.log('doop')
-                      appState.title1.geoClicked = true
-                      const clearGeoFilterButton = document.getElementById('title1ClearGeoFilterButton')
-                      clearGeoFilterButton.classList.remove('hide')
-                      clearGeoFilterButton.addEventListener('click', () => {
-                        renderGeoData(null, appState.title1, 'title1')
-                        chart.filter(null)
-                        appState.title1.geoClicked = false
-                        clearGeoFilterButton.classList.add('hide')
-                      })
-                      chart.filter(selectedState)
-                      renderGeoData(selectedState, appState.title1, 'title1', appState.title1.salesByState.all().filter(item => item.key === selectedState)[0])
+        us1Chart
+          .width(us1Width + 16)
+          .height(us1Height)
+          .dimension(appState.title1.stateRegion)
+          .group(appState.title1.salesByState)
+          .colors(d3.scaleQuantize().range(colorScales.blue))
+          .colorDomain(generateScale(appState.title1.salesByState, 'title1'))
+          .colorAccessor(d => {
+            return d ? d : 0
+          })
+          .overlayGeoJson(statesJson.features, "state", d => {
+            return d.properties.name
+          })
+          .projection(d3.geoAlbersUsa()
+            .scale(Math.min(getWidth('us1-chart') * 1.5, getHeight('us1-chart') * 1.5))
+            .translate([getWidth('us1-chart') / 8, getHeight('us1-chart') / 2.5])
+          )
+          .valueAccessor(kv => {
+            if (kv.value !== undefined) {
+              if (appState.title1.usChartRenderOption === 'percentOfPopulation') {
+                return kv.value.sampled_total_sales / kv.value.state_population
+              } else {
+                return kv.value.sampled_total_sales
+              }
+            }
+          })
+          .renderTitle(false)
+          .legend(dc.legend().x(getWidth('us1-chart') / 4.5).y(getHeight('us1-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us1-chart') / 10).legendWidth(getWidth('us1-chart') / 3))
+          .on('pretransition', (chart) => {
+              chart.selectAll('path')
+                  .call(title1MapTip)
+                  .on('mouseover.title1MapTip', d => {
+                    if (!appState.title1.geoClicked) {
+                      title1MapTip.show(d)
+                      renderGeoData(d, appState.title1, 'title1', appState.title1.salesByState.all().filter(item => item.key === d.properties.name)[0])
                     }
                   })
+                  .on('mouseout.title1MapTip', d => {
+                    title1MapTip.hide(d)
+                    if(!appState.title1.geoClicked) {
+                      renderGeoData(null, appState.title1, 'title1')
+                    }
+                  });
+          })
+          .on('renderlet.click', chart => {
+            chart.selectAll('path').on('click', selected => {
+              const selectedState = selected.properties.name
+              if(appState.title1.circulationClicked && appState.title1.geoClicked) {
+                chart.filter(null)
+                chart.filter(selectedState)
+                renderGeoData(selectedState, appState.title1, 'title1', appState.title1.salesByState.all().filter(item => item.key === selectedState)[0])
+              } else if (appState.title1.circulationClicked) {
+                appState.title1.geoClicked = true
+                const clearGeoFilterButton = document.getElementById('title1ClearGeoFilterButton')
+                clearGeoFilterButton.classList.remove('hide')
+                clearGeoFilterButton.addEventListener('click', () => {
+                  renderGeoData(null, appState.title1, 'title1')
+                  chart.filter(null)
+                  appState.title1.geoClicked = false
+                  clearGeoFilterButton.classList.add('hide')
                 })
-                .on('filtered.geodata', (chart, filter) => {
-                  if(chart.filter() === null) {
-                    renderGeoData(null, appState.title1, 'title1')
-                    const clearGeoFilterButton = document.getElementById('title1ClearGeoFilterButton')
-                    appState.title1.geoClicked = false
-                    clearGeoFilterButton.classList.add('hide')
-                  }
-                })
-                .on("preRender", (chart) => {
-                  chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
-                })
-                .on("preRedraw", (chart) => {
-                  chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
-                })
+                chart.filter(selectedState)
+                renderGeoData(selectedState, appState.title1, 'title1', appState.title1.salesByState.all().filter(item => item.key === selectedState)[0])
+              }
+            })
+          })
+          .on('filtered.geodata', (chart, filter) => {
+            if(chart.filter() === null) {
+              renderGeoData(null, appState.title1, 'title1')
+              const clearGeoFilterButton = document.getElementById('title1ClearGeoFilterButton')
+              appState.title1.geoClicked = false
+              clearGeoFilterButton.classList.add('hide')
+            }
+          })
+          .on("preRender", (chart) => {
+            chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
+          })
+          .on("preRedraw", (chart) => {
+            chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
+          })
 
-        us2Chart.width(us2Width + 367)
-                .height(us2Height)
-                .dimension(appState.title2.stateRegion)
-                .group(appState.title2.salesByState)
-                .colors(d3.scaleQuantize().range(colorScales.red))
-                .colorDomain(generateScale(appState.title2.salesByState, 'title2'))
-                .colorAccessor(d => {
-                  return d ? d : 0
-                })
-                .overlayGeoJson(statesJson.features, "state", d => {
-                  return d.properties.name
-                })
-                .projection(d3.geoAlbersUsa()
-                  .scale(Math.min(getWidth('us2-chart') * 1.5, getHeight('us2-chart') * 1.5))
-                  .translate([getWidth('us2-chart') / 8, getHeight('us2-chart') / 2.5])
-                )
-                .valueAccessor(kv => {
-                  if (kv.value !== undefined) {
-                    if (appState.title2.usChartRenderOption === 'percentOfPopulation') {
-                      return kv.value.sampled_total_sales / kv.value.state_population
-                    } else {
-                      return kv.value.sampled_total_sales
-                    }
-                  }
-                })
-                .renderTitle(false)
-                .legend(dc.legend().x(getWidth('us2-chart') / 4.7).y(getHeight('us2-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us2-chart') / 10).legendWidth(getWidth('us2-chart') / 3))
-                .on('pretransition', (chart) => {
-                    chart.selectAll('path')
-                        .call(title2MapTip)
-                        .on('mouseover.title2MapTip', d => {
-                          if (!appState.title2.geoClicked) {
-                            title2MapTip.show(d)
-                            renderGeoData(d, appState.title2, 'title2', appState.title2.salesByState.all().filter(item => item.key === d.properties.name)[0])
-                          }
-                        })
-                        .on('mouseout.title2MapTip', d => {
-                          title2MapTip.hide(d)
-                          if(!appState.title2.geoClicked) {
-                            renderGeoData(null, appState.title2, 'title2')
-                          }
-                        });
-                })
-                .on('renderlet.click', chart => {
-                  chart.selectAll('path').on('click', selected => {
-                    const selectedState = selected.properties.name
-                    if(appState.title2.circulationClicked && appState.title2.geoClicked) {
-                      chart.filter(null)
-                      chart.filter(selectedState)
-                      renderGeoData(selectedState, appState.title2, 'title2', appState.title2.salesByState.all().filter(item => item.key === selectedState)[0])
-                    } else if (appState.title2.circulationClicked) {
-                      appState.title2.geoClicked = true
-                      const clearGeoFilterButton = document.getElementById('title2ClearGeoFilterButton')
-                      clearGeoFilterButton.classList.remove('hide')
-                      clearGeoFilterButton.addEventListener('click', () => {
-                        renderGeoData(null, appState.title2, 'title2')
-                        chart.filter(null)
-                        appState.title2.geoClicked = false
-                        clearGeoFilterButton.classList.add('hide')
-                      })
-                      chart.filter(selectedState)
-                      renderGeoData(selectedState, appState.title2, 'title2', appState.title2.salesByState.all().filter(item => item.key === selectedState)[0])
+        us2Chart
+          .width(us2Width + 367)
+          .height(us2Height)
+          .dimension(appState.title2.stateRegion)
+          .group(appState.title2.salesByState)
+          .colors(d3.scaleQuantize().range(colorScales.red))
+          .colorDomain(generateScale(appState.title2.salesByState, 'title2'))
+          .colorAccessor(d => {
+            return d ? d : 0
+          })
+          .overlayGeoJson(statesJson.features, "state", d => {
+            return d.properties.name
+          })
+          .projection(d3.geoAlbersUsa()
+            .scale(Math.min(getWidth('us2-chart') * 1.5, getHeight('us2-chart') * 1.5))
+            .translate([getWidth('us2-chart') / 8, getHeight('us2-chart') / 2.5])
+          )
+          .valueAccessor(kv => {
+            if (kv.value !== undefined) {
+              if (appState.title2.usChartRenderOption === 'percentOfPopulation') {
+                return kv.value.sampled_total_sales / kv.value.state_population
+              } else {
+                return kv.value.sampled_total_sales
+              }
+            }
+          })
+          .renderTitle(false)
+          .legend(dc.legend().x(getWidth('us2-chart') / 4.7).y(getHeight('us2-chart') / 2.5).itemHeight(10).itemWidth(getWidth('us2-chart') / 10).legendWidth(getWidth('us2-chart') / 3))
+          .on('pretransition', (chart) => {
+              chart.selectAll('path')
+                  .call(title2MapTip)
+                  .on('mouseover.title2MapTip', d => {
+                    if (!appState.title2.geoClicked) {
+                      title2MapTip.show(d)
+                      renderGeoData(d, appState.title2, 'title2', appState.title2.salesByState.all().filter(item => item.key === d.properties.name)[0])
                     }
                   })
+                  .on('mouseout.title2MapTip', d => {
+                    title2MapTip.hide(d)
+                    if(!appState.title2.geoClicked) {
+                      renderGeoData(null, appState.title2, 'title2')
+                    }
+                  });
+          })
+          .on('renderlet.click', chart => {
+            chart.selectAll('path').on('click', selected => {
+              const selectedState = selected.properties.name
+              if(appState.title2.circulationClicked && appState.title2.geoClicked) {
+                chart.filter(null)
+                chart.filter(selectedState)
+                renderGeoData(selectedState, appState.title2, 'title2', appState.title2.salesByState.all().filter(item => item.key === selectedState)[0])
+              } else if (appState.title2.circulationClicked) {
+                appState.title2.geoClicked = true
+                const clearGeoFilterButton = document.getElementById('title2ClearGeoFilterButton')
+                clearGeoFilterButton.classList.remove('hide')
+                clearGeoFilterButton.addEventListener('click', () => {
+                  renderGeoData(null, appState.title2, 'title2')
+                  chart.filter(null)
+                  appState.title2.geoClicked = false
+                  clearGeoFilterButton.classList.add('hide')
                 })
-                .on('filtered.geodata', (chart, filter) => {
-                  if(chart.filter() === null) {
-                    renderGeoData(null, appState.title2, 'title2')
-                    const clearGeoFilterButton = document.getElementById('title2ClearGeoFilterButton')
-                    appState.title2.geoClicked = false
-                    clearGeoFilterButton.classList.add('hide')
-                  }
-                })
-                .on("preRender", (chart) => {
-                  chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
-                })
-                .on("preRedraw", (chart) => {
-                  chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
-                })
+                chart.filter(selectedState)
+                renderGeoData(selectedState, appState.title2, 'title2', appState.title2.salesByState.all().filter(item => item.key === selectedState)[0])
+              }
+            })
+          })
+          .on('filtered.geodata', (chart, filter) => {
+            if(chart.filter() === null) {
+              renderGeoData(null, appState.title2, 'title2')
+              const clearGeoFilterButton = document.getElementById('title2ClearGeoFilterButton')
+              appState.title2.geoClicked = false
+              clearGeoFilterButton.classList.add('hide')
+            }
+          })
+          .on("preRender", (chart) => {
+            chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
+          })
+          .on("preRedraw", (chart) => {
+            chart.colorDomain(d3.extent(chart.data(), chart.valueAccessor()));
+          })
 
         composite.unClick = resetCharts
 
-        function generateLineCharts() {
+        composite.generateLineCharts = () => {
           const colors = ['blue', 'red']
           return appState.titles
             .filter(title => title !== 'null')
@@ -523,14 +569,13 @@ const renderCharts = (data) => {
           })
         }
 
-        const lineCharts = generateLineCharts()
-        console.log(lineCharts)
+        const lineCharts = composite.generateLineCharts()
         composite
           .width(lineChartWidth-50)
           .height(lineChartHeight-50)
           .margins({ top: 10, right: 10, bottom: 50, left: 80 })
           .elasticY(true)
-          .x(d3.scaleTime().domain([d3.min(appState.title1.circulationByDate.all(), d => d.key), d3.max(appState.title1.circulationByDate.all(), d => d.key)]))
+          .x(d3.scaleTime().domain([d3.min([...appState.title1.circulationByDate.all(), ...appState.title2.circulationByDate.all()], d => d.key), d3.max([...appState.title1.circulationByDate.all(), ...appState.title2.circulationByDate.all()], d => d.key)]))
           .xUnits(d3.timeYears)
           .brushOn(false)
           .compose(lineCharts)
@@ -554,7 +599,6 @@ const renderCharts = (data) => {
               })
 
               appState[currentTitle].totalSalesByState = appState[currentTitle].salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-              appState[currentTitle].usChart.colorDomain(generateScale(appState[currentTitle].salesByState, 'title1'))
               appState[currentTitle].usChart.customUpdate()
             })
           })
@@ -573,8 +617,6 @@ const renderCharts = (data) => {
                 })
 
                 appState[currentTitle].totalSalesByState = appState[currentTitle].salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
-
-                appState[currentTitle].usChart.colorDomain(generateScale(appState.title1.salesByState, 'title1'))
                 appState[currentTitle].usChart.customUpdate()
               }
             })

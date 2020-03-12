@@ -4,6 +4,8 @@ import {geoReducerAdd, geoReducerRemove, geoReducerDefault, circulationReducerAd
 
 export function processData(geo, circulation) {
   const template = {
+    titleCirculation: {},
+    titleGeoData: {},
     stateRegion: {},
     samplePeriodEnd: {},
     salesByState: {
@@ -28,5 +30,5 @@ export function processData(geo, circulation) {
   const dates = titleCirculation.dimension(d => d.actual_issue_date)
   const circulationByDate = dates.group().reduce(circulationReducerAdd, circulationReducerRemove, circulationReducerDefault)
 
-  return {stateRegion, samplePeriodEnd, salesByState, dates, circulationByDate}
+  return {titleCirculation, titleGeodata, stateRegion, samplePeriodEnd, salesByState, dates, circulationByDate}
 }
