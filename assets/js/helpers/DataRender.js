@@ -13,7 +13,6 @@ export function togglePropertyVisibility(key, value, transform) {
 }
 
 export function renderIssueData(data, title) {
-  // console.log('Helper logging data', data)
   if (data) {
     const {date, issue_circulation, publishing_company, price, editor, magazine_title, titles_included, circulation_quality, special_notes} = prettifyIssueData(data)
     document.getElementById(`${title}-total-circulation`).textContent = issue_circulation
