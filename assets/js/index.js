@@ -201,6 +201,7 @@ const renderCharts = (data) => {
     const lineCharts = composite.generateLineCharts()
     composite
       .compose(lineCharts)
+      .x(d3.scaleTime().domain([d3.min([...appState.title1.circulationByDate.all(), ...appState.title2.circulationByDate.all()], d => d.key), d3.max([...appState.title1.circulationByDate.all(), ...appState.title2.circulationByDate.all()], d => d.key)]))
       .render()
   }
 
