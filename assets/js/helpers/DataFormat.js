@@ -1,7 +1,7 @@
 // ****************************************************
 // Formatting
 // ****************************************************
-import {stateCodes } from '../../data/constants.js'
+import { stateCodes } from '../../data/constants.js'
 
 export const renderNumberWithCommas = (number) => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
@@ -53,6 +53,7 @@ export function toMetric(x) {
   if(x < 1000000) {
     return Math.round(x/1000) + "k";
   }
+
   if( x < 10000000) {
     return (x/1000000).toFixed(2) + "M";
   }
@@ -68,8 +69,8 @@ export function toMetric(x) {
   return "1T+";
 }
 
-export function formatNum(num, state, title) {
-  if (state[title].usChartRenderOption === 'percentOfPopulation') {
+export function formatNum(num, renderOption) {
+  if ( renderOption === 'percentOfPopulation') {
     return `${(num*100).toFixed(2)}%`
   } else {
     return toMetric(num)

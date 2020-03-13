@@ -52,6 +52,5 @@ export function renderGeoData(data, state, title, selectedItem) {
     document.getElementById(`${title}-state-pop`).textContent = '-'
     document.getElementById(`${title}-percent-of-total`).textContent = '-'
     document.getElementById(`${title}-geo-issue-date`).textContent = '-'
-
   }
 }
