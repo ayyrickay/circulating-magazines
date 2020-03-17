@@ -365,7 +365,7 @@ const renderCharts = (data) => {
             const step = (domain[1] - domain[0]) / range.length
             let val = domain[0]
             return range.map(function (d, i) {
-                const legendable = {name: `${formatNum(val, appState, 'title1')} - ${formatNum(val+step, appState, 'title1')}`, chart: us1Chart}
+                const legendable = {name: `${formatNum(val, appState['title1'].usChartRenderOption)} - ${formatNum(val+step, appState['title1'].usChartRenderOption)}`, chart: us1Chart}
                 legendable.color = us1Chart.colorCalculator()(val)
                 val += step
                 return legendable
@@ -382,7 +382,7 @@ const renderCharts = (data) => {
             const step = (domain[1] - domain[0]) / range.length
             let val = domain[0]
             return range.map(function (d, i) {
-                const legendable = {name: `${formatNum(val, appState, 'title2')} - ${formatNum(val+step, appState, 'title2')}`, chart: us2Chart}
+                const legendable = {name: `${formatNum(val, appState['title2'].usChartRenderOption)} - ${formatNum(val+step, appState['title2'].usChartRenderOption)}`, chart: us2Chart}
                 legendable.color = us2Chart.colorCalculator()(val)
                 val += step
                 return legendable
