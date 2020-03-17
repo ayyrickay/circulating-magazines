@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { titleCleanup, prettifyIssueData, renderNumberWithCommas, toMetric, formatNum} from '../assets/js/helpers/DataFormat.js'
+import { combineCirculation, prettifyIssueData, renderNumberWithCommas, titleCleanup, toMetric, formatNum} from '../assets/js/helpers/DataFormat.js'
 
 const emptyData = {
     "data" : {
@@ -84,6 +84,29 @@ describe('DataFormat', () => {
         it('should return metric designation without percent', () => {
             assert.equal(formatNum(10000, 'rawData'), '10k')
         })
+    })
+
+    describe('combineCirculation', () => {
+        it('should return an empty array when given no titles', () => {
+            const output = generateCombinedCirculation([], null, null)
+            assert.deepEqual(output, [])
+        })
+
+        it('should return an empty array when given non-array', () => {
+            const output = generateCombinedCirculation('saev', null, null)
+            assert.deepEqual(output, [])
+        })
+
+        it('should combine two arrays', () => {
+            const output = generateCombinedCirculation(['saev', 'neyo'], [1, 2], [3, 4])
+            assert.deepEqual(output, [1, 2, 3, 4])
+        })
+
+        it('should ignore second array if value is null', () => {
+            const output = generateCombinedCirculation(['saev', 'null'], [1, 2], [3, 4])
+            assert.deepEqual(output, [1, 2])
+        })
+
     })
 
     describe('prettyifyIssueData', () => {
