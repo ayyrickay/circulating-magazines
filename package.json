@@ -13,8 +13,8 @@
   "type": "module",
   "scripts": {
     "test": "npx mocha",
-    "circulation-clean": "sh assets/data/scripts/circulation-cleaner.sh",
-    "geodata-clean": "sh assets/data/scripts/geodata-cleaner.sh",
+    "circulation-cleaner": "sh assets/data/scripts/circulation_cleaner.sh",
+    "geodata-cleaner": "sh assets/data/scripts/geodata_cleaner.sh",
     "title-generator": "node assets/data/scripts/list-of-title-generator.js"
   },
   "repository": {
