@@ -12,7 +12,10 @@
   },
   "type": "module",
   "scripts": {
-    "test": "npx mocha"
+    "test": "npx mocha",
+    "circulation-clean": "sh assets/data/scripts/circulation-cleaner.sh",
+    "geodata-clean": "sh assets/data/scripts/geodata-cleaner.sh",
+    "title-generator": "node assets/data/scripts/list-of-title-generator.js"
   },
   "repository": {
     "type": "git",
