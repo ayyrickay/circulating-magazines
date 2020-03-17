@@ -1,0 +1,39 @@
+{
+  "name": "circulating-magazines",
+  "version": "1.0.0",
+  "description": "A project of magazine circulation data",
+  "main": "index.js",
+  "dependencies": {
+    "csvtojson": "^2.0.10",
+    "moment": "^2.24.0"
+  },
+  "devDependencies": {
+    "mocha": "^7.1.0"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "npx mocha",
+    "circulation-clean": "sh assets/data/scripts/circulation-cleaner.sh",
+    "geodata-clean": "sh assets/data/scripts/geodata-cleaner.sh",
+    "title-generator": "node assets/data/scripts/list-of-title-generator.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ayyrickay/circulating-magazines.git"
+  },
+  "keywords": [
+    "data",
+    "visualization",
+    "dc.js",
+    "javascript",
+    "d3",
+    "data",
+    "viz"
+  ],
+  "author": "Ricky Holtz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ayyrickay/circulating-magazines/issues"
+  },
+  "homepage": "https://github.com/ayyrickay/circulating-magazines#readme"
+}

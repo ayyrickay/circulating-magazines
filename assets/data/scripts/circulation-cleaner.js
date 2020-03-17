@@ -10,11 +10,16 @@
 //
 //     # Object destructuring would be helpful here, but maybe possible in python?
 const args = process.argv.slice(2)
-const csv = require('csvtojson')
-const path = require('path')
-const moment = require('moment')
+import csv from 'csvtojson'
+import path from 'path'
+import { fileURLToPath } from 'url';
+import moment from'moment'
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const circulationdataPath = path.join(__dirname, `${args[0]}`)
-const fs = require('fs')
+import fs from 'fs'
 
 const getDecade = (date) => {
   const year = date.getFullYear()

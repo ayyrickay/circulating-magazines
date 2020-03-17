@@ -15,14 +15,18 @@
  * EXAMPLE
  * node geodata-cleaner.js NEYO-geodata.js
  */
-
 const args = process.argv.slice(2)
-const csv = require('csvtojson')
-const path = require('path')
+import csv from 'csvtojson'
+import path from 'path'
+import { fileURLToPath } from 'url';
+import moment from'moment'
+import fs  from 'fs'
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const geodataPath = path.join(__dirname, args[0])
-const moment = require('moment')
-const fs = require('fs')
-const populationData = require('./node_population_by_state')
+
+import {populationData} from './node_population_by_state.js'
 
 const getDecade = (date) => {
   const year = date.get('year')
@@ -32,7 +36,7 @@ const getDecade = (date) => {
 }
 
 const getPopulation = (state, date) => {
-  const stateObject = populationData.populationData[state]
+  const stateObject = populationData[state]
   if (!stateObject) {
     return stateObject
   } else {
