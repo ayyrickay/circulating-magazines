@@ -19,6 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const circulationdataPath = path.join(__dirname, `${args[0]}`)
+
 import fs from 'fs'
 
 const getDecade = (date) => {
