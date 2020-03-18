@@ -2,7 +2,7 @@ import { notes, colorScales } from '../data/constants.js'
 import { titleList } from '../data/titles-list.js'
 import { processData } from './helpers/CrossfilterGenerator.js'
 import {renderIssueData, renderGeoData, togglePropertyVisibility} from './helpers/DataRender.js'
-import {titleCleanup, renderNumberWithCommas, toMetric, formatNum} from './helpers/DataFormat.js'
+import {combineCirculation, titleCleanup, renderNumberWithCommas, toMetric, formatNum} from './helpers/DataFormat.js'
 import {geoReducerAdd, geoReducerRemove, geoReducerDefault, circulationReducerAdd, circulationReducerRemove, circulationReducerDefault} from './helpers/dc-reducers.js'
 const numberFormat = d3.format(".2f")
 const us1Chart = dc.geoChoroplethChart("#us1-chart")
@@ -201,7 +201,8 @@ const renderCharts = (data) => {
     const lineCharts = composite.generateLineCharts()
     composite
       .compose(lineCharts)
-      .x(d3.scaleTime().domain([d3.min([...appState.title1.circulationByDate.all(), ...appState.title2.circulationByDate.all()], d => d.key), d3.max([...appState.title1.circulationByDate.all(), ...appState.title2.circulationByDate.all()], d => d.key)]))
+      .x(d3.scaleTime()
+           .domain([d3.min(combineCirculation(appState.titles, appState.title1.circulationByDate.all(), appState.title2.circulationByDate.all()), d => d.key), d3.max(combineCirculation(appState.titles, appState.title1.circulationByDate.all(), appState.title2.circulationByDate.all()), d => d.key)]))
       .render()
   }
 
