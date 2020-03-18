@@ -3,6 +3,18 @@
 // ****************************************************
 import { stateCodes } from '../../data/constants.js'
 
+export function combineCirculation (titles, circulation1, circulation2) {
+  if (titles.length < 1 || !Array.isArray(titles)) {
+    return []
+  }
+
+  if (titles[1] === 'null') {
+    return circulation1
+  }
+
+  return [...circulation1, ...circulation2]
+}
+
 export const renderNumberWithCommas = (number) => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
