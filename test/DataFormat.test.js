@@ -88,22 +88,22 @@ describe('DataFormat', () => {
 
     describe('combineCirculation', () => {
         it('should return an empty array when given no titles', () => {
-            const output = generateCombinedCirculation([], null, null)
+            const output = combineCirculation([], null, null)
             assert.deepEqual(output, [])
         })
 
         it('should return an empty array when given non-array', () => {
-            const output = generateCombinedCirculation('saev', null, null)
+            const output = combineCirculation('saev', null, null)
             assert.deepEqual(output, [])
         })
 
         it('should combine two arrays', () => {
-            const output = generateCombinedCirculation(['saev', 'neyo'], [1, 2], [3, 4])
+            const output = combineCirculation(['saev', 'neyo'], [1, 2], [3, 4])
             assert.deepEqual(output, [1, 2, 3, 4])
         })
 
         it('should ignore second array if value is null', () => {
-            const output = generateCombinedCirculation(['saev', 'null'], [1, 2], [3, 4])
+            const output = combineCirculation(['saev', 'null'], [1, 2], [3, 4])
             assert.deepEqual(output, [1, 2])
         })
 
