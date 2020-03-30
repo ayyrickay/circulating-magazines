@@ -19,6 +19,11 @@ export const renderNumberWithCommas = (number) => {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 }
 
+export function hasAValidIssueDate (issueData) {
+  // Checks to see if object has actual_issue_date property that looks kinda like the following format: 1921-06-04T00:00:00.000Z
+  return issueData.actual_issue_date ? /^\d{4}\-\d{1,2}\-\d{1,2}\T0{2}\:0{2}\:0{2}Z$/.test(issueData.actual_issue_date) : false
+}
+
 export function titleCleanup (geo, circulation) {
   const cleanGeodata = geo.filter(data => {
     if (!data) {return false}
@@ -26,11 +31,14 @@ export function titleCleanup (geo, circulation) {
   })
 
   const cleanCirculationData = circulation.map(title => {
-    try {
+    if(hasAValidIssueDate(title)) {
       title.actual_issue_date = moment.utc(title.actual_issue_date)
       return title
-    } catch (e) {
-      console.error(e, title.actual_issue_date)
+    } else {
+      console.log('Invalid issue date. Please report this issue and include the title below.')
+      console.error(title)
+      title.actual_issue_date = moment.utc(new Date())
+      return title
     }
   })
 
