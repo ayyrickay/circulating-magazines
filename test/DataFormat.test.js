@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { combineCirculation, prettifyIssueData, renderNumberWithCommas, titleCleanup, toMetric, formatNum} from '../assets/js/helpers/DataFormat.js'
+import { combineCirculation, prettifyIssueData, renderNumberWithCommas, titleCleanup, toMetric, formatNum, hasAValidIssueDate} from '../assets/js/helpers/DataFormat.js'
 
 const emptyData = {
     "data" : {
@@ -26,7 +26,29 @@ const sampleIssueData = {
     "layer": "0",
     "y0": 0,
     "y1": 1291679
-  }
+}
+
+const dateErrorIssueData = {
+    "actual_issue_date":"Invalid Date",
+    "issue_circulation":605497,
+    "circulation_quality":"Certified",
+    "circulation_source":"ABC",
+    "price":"$0.15",
+    "publishing_company":"Weekly Publications Inc.",
+    "editor":"Malcolm Muir",
+    "canonical_title":"Newsweek"
+ }
+
+ const dateCorrectIssueData = {
+    "actual_issue_date":"1945-01-29T00:00:00Z",
+    "issue_circulation":605497,
+    "circulation_quality":"Certified",
+    "circulation_source":"ABC",
+    "price":"$0.15",
+    "publishing_company":"Weekly Publications Inc.",
+    "editor":"Malcolm Muir",
+    "canonical_title":"Newsweek"
+ }
 
 describe('DataFormat', () => {
     describe('renderNumberWithCommas', () => {
@@ -107,6 +129,20 @@ describe('DataFormat', () => {
             assert.deepEqual(output, [1, 2])
         })
 
+    })
+
+    describe('has a Valid Issue Date', () => {
+        it('should return false with no actual_issue_date property', () => {
+            assert.equal(hasAValidIssueDate(sampleIssueData), false)
+        })
+
+        it('should return true with a valid issue date', () => {
+            assert.equal(hasAValidIssueDate(dateCorrectIssueData), true)
+        })
+
+        it('should return false with a date of Invalid Date', () => {
+            assert.equal(hasAValidIssueDate(dateErrorIssueData), false)
+        })
     })
 
     describe('prettyifyIssueData', () => {
