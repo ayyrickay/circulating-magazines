@@ -35,9 +35,9 @@ export function titleCleanup (geo, circulation) {
       title.actual_issue_date = moment.utc(title.actual_issue_date)
       return title
     } else {
-      console.log('Invalid issue date; using 01/01/1946 as placeholder. Please report this issue or repair data set and include the title below.')
+      console.log('Invalid issue date. Please report this issue and include the title below.')
       console.error(title)
-      title.actual_issue_date = moment.utc('1946-01-01T00:00:00Z')
+      title.actual_issue_date = moment.utc(new Date())
       return title
     }
   })
