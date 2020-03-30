@@ -54,7 +54,6 @@ table {
 }
 
 body {
-  overflow: hidden;
   background-color: #F1F3F3;
   font-family: 'Open Sans', 'Helvetica Neue', Helvetica, sans-serif;
 	letter-spacing: .01em;
@@ -67,7 +66,6 @@ body {
   margin: 0 auto;
 	padding-top: 2em;
   display: grid;
-  overflow-x: hidden;
   grid-template-columns: repeat(12, 1fr);
   grid-template-rows: 3em repeat(9, 1fr);
   grid-gap: 1em;
