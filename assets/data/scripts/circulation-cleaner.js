@@ -13,7 +13,7 @@ const args = process.argv.slice(2)
 import csv from 'csvtojson'
 import path from 'path'
 import { fileURLToPath } from 'url';
-import moment from'moment'
+import moment from 'moment'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
