@@ -38,8 +38,10 @@ async function getCirculationJson () {
   const cleanCirculation = circulationData
     .filter(issue => issue.circulation)
     .map(match => {
-      return {
-          actual_issue_date: moment.utc({'year': match.year, 'month': match.month-1, 'day': `${match.day || 1}`}).format(),
+      const issue_date = moment.utc({'year': match.year, 'month': match.month-1, 'day': `${match.day || 1}`})
+      if (issue_date.isValid()) {
+        return {
+          actual_issue_date: issue_date.format(),
           issue_circulation: parseInt(match.circulation),
           circulation_quality: match.circulation_quality,
           circulation_source: match.circulation_source,
@@ -54,18 +56,21 @@ async function getCirculationJson () {
           canonical_title: match.canonical_title,
           special_notes: match.special_notes
         }
+      } else {
+        console.error(`Invalid date found, ${JSON.stringify(match)}`)
+      }
   }
     )
 
 
-  console.log('initial length is', circulationData.length)
-  console.log(circulationData[0])
-  console.log(cleanCirculation[0])
-  console.log('final length of array is', cleanCirculation.length)
+  // console.log('initial length is', circulationData.length)
+  // console.log(circulationData[0])
+  // console.log(cleanCirculation[0])
+  // console.log('final length of array is', cleanCirculation.length)
 
   fs.writeFile(path.join(__dirname, `/../clean/${args[0].split('/')[2].split('-')[0].toLowerCase()}-circulation.json`), JSON.stringify(cleanCirculation), 'utf8', (err) => {
     if (err) {throw err}
-    console.log('Successfully joined data')
+    // console.log('Successfully joined data')
   })
 }
 
