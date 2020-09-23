@@ -11,3 +11,7 @@ A data visualization that renders magazine circulation data. Powered primarily b
 3. Use `npm run circulation-cleaner` and/or `npm run geodata-cleaner` to convert the CSVs to JSON files that are consumable by the front-end.
 
 4. Finally, use `npm run title-generator` to update the list of titles that are rendered by the front end.
+
+## Adding Special Notes
+
+Special Notes can be added in the `data/constants.js` folder. It is represented as a simple JSON object, in which the key is the title code (e.g., `NEYO`) and the value is the special note. The UI will pull from this map to populate the special notes field in the visualization.
