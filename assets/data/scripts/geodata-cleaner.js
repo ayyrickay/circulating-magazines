@@ -26,6 +26,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const geodataPath = path.join(__dirname, args[0])
 
+const errors = {
+  year: 'No year errors found'
+}
+
 import {populationData} from './node_population_by_state.js'
 
 const getDecade = (date) => {
@@ -51,8 +55,12 @@ async function getGeodataJson () {
   }).fromFile(geodataPath)
 
   const revisedGeodata = geodata.filter(data => data.mail_subscriptions > -1 && data.single_copy_sales > -1).map(data => {
-    const [month, day, year] = data.period_ending.split('/')
-    if (!year) return console.log(data)
+    // const [month, day, year] = data.period_ending.split('/')
+    const [year, month, day] = data.period_ending.split('-')
+    if (!year || year.length > 4) {
+      errors.year = `Incorrect date format found: ${data.period_ending}`
+      return  false
+    }
     const periodEnding = moment.utc({'year': year.indexOf('19') < -1 ? `19${year}` : year, month: parseInt(month)-1, 'day': day })
     const periodStart = moment.utc({'year': periodEnding.get('year'), 'month': periodEnding.get('month') - 5, 'day': 1})
     return {
@@ -71,14 +79,16 @@ async function getGeodataJson () {
 
   const finalData = [].concat.apply([], revisedGeodata)
 
-  console.log('initial length is', geodata.length)
   console.log(args[0].split('/')[2].split('-')[0])
+  console.log('initial length is', geodata.length)
+  console.log('errors:', errors)
   console.log(finalData[0])
   console.log('final length of array is', finalData.length)
 
   fs.writeFile(path.join(__dirname, `/../clean/${args[0].split('/')[2].split('-')[0].toLowerCase()}-geodata.json`), JSON.stringify(finalData), 'utf8', (err) => {
     if (err) {throw err}
-    console.log('Successfully cleaned data')
+    console.log('Successfully ran script')
+    console.log('======================================')
     })
 }
 
