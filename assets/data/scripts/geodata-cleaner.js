@@ -55,9 +55,10 @@ async function getGeodataJson () {
   }).fromFile(geodataPath)
 
   const revisedGeodata = geodata.filter(data => data.mail_subscriptions > -1 && data.single_copy_sales > -1).map(data => {
-    // const [month, day, year] = data.period_ending.split('/')
-    const [year, month, day] = data.period_ending.split('-')
+    const [month, day, year] = data.period_ending.split('/')
+    // const [year, month, day] = data.period_ending.split('-')
     if (!year || year.length > 4) {
+      console.log(year)
       errors.year = `Incorrect date format found: ${data.period_ending}`
       return  false
     }
