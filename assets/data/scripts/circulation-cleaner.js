@@ -29,11 +29,22 @@ const getDecade = (date) => {
   return yearArray.join('')
 }
 
+async function generateCirculationJSON () {
+  try {
+    return await csv({
+      ignoreEmpty: true,
+      trim: true
+    }).fromFile(circulationdataPath)
+  } catch (err) {
+    console.error(`Err with ${circulationdataPath}: ${err}`)
+  }
+}
+
 async function getCirculationJson () {
-  const circulationData = await csv({
-    ignoreEmpty: true,
-    trim: true
-  }).fromFile(circulationdataPath)
+  
+  const circulationData = await generateCirculationJSON()
+
+  if(!circulationData.length || circulationData.length < 0) { return null}
 
   const cleanCirculation = circulationData
     .filter(issue => issue.circulation)
