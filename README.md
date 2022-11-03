@@ -1,4 +1,4 @@
-# Circulating American Magazines [![Build Status](https://travis-ci.com/ayyrickay/circulating-magazines.svg?branch=develop)](https://travis-ci.org/ayyrickay/circulating-magazines)
+# Circulating American Magazines ![Build Status](https://github.com/ayyrickay/circulating-magazines/actions/workflows/main.yml/badge.svg?branch=develop)
 
 A data visualization that renders magazine circulation data. Powered primarily by `dc.js`. Visible on the [Circulating Magazines Project at JMU](https://sites.lib.jmu.edu/circulating/visualizations/)
 
