@@ -46,7 +46,7 @@ export function titleCleanup (geo, circulation) {
 }
 
 export function renderDateInUTC(date) {
-  return new Date(date).toLocaleString('en-US', {timezone: 'UTC'})
+  return new Date(date).toLocaleString('en-US', { timeZone: 'UTC' })
 }
 
 export function prettifyIssueData({data: {key, value: {issue_circulation, price, type, publishing_company, editor, magazine_title, circulation_quality, special_notes, titles_included}}}) {
