@@ -204,10 +204,18 @@ describe('DataFormat', () => {
     })
 
     describe('renderDateInUTC', () => {
-        it('should return a formatted date string', () => {
-            const utcDate = renderDateInUTC('1945-01-29T00:00:00Z')
-            assert.equal(typeof utcDate, 'string')
-            assert.ok(utcDate.includes('1945'))
+        it('should return a correctly formatted UTC date string', () => {
+            const input = '1945-01-29T00:00:00Z'
+            const date = new Date(input)
+            const expectedUtcDate = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'UTC',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(date)
+
+            const utcDate = renderDateInUTC(input)
+            assert.strictEqual(utcDate, expectedUtcDate)
         })
     })
 })
