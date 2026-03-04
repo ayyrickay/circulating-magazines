@@ -24,6 +24,7 @@ const appState = {
     data: {},
     geoClicked: false,
     circulationClicked: false,
+    selectedIssueDate: null,
     usChart: us1Chart
   },
   title2: {
@@ -32,6 +33,7 @@ const appState = {
     data: {},
     geoClicked: false,
     circulationClicked: false,
+    selectedIssueDate: null,
     usChart: us2Chart
   }
 }
@@ -284,8 +286,34 @@ const renderCharts = (data) => {
         `
       })
 
+    function isPinnedIssue (selected) {
+      const currentTitle = selected.data.value.canonical_title === appState.title1.canonical_title ? 'title1' : 'title2'
+      const selectedIssueDate = appState[currentTitle].selectedIssueDate
+      const issueDate = moment.utc(selected.x).valueOf()
+      return appState[currentTitle].circulationClicked && selectedIssueDate !== null && issueDate === selectedIssueDate
+    }
+
+    function updatePinnedIssueCircleState (chart) {
+      chart.selectAll('circle')
+        .each(function (selected) {
+          const circle = d3.select(this)
+          const defaultRadius = circle.attr('data-default-r') || circle.attr('r') || 3
+          circle.attr('data-default-r', defaultRadius)
+          circle
+            .classed('clicked-issue-circle', isPinnedIssue(selected))
+            .attr('r', defaultRadius)
+        })
+
+      chart.selectAll('circle')
+        .filter(selected => isPinnedIssue(selected))
+        .each(function () {
+          this.parentNode.appendChild(this)
+        })
+    }
+
     function resetChart (title) {
       appState[title].circulationClicked = false
+      appState[title].selectedIssueDate = null
       appState[title].usChartRenderOption = 'percentOfPopulation'
       document.getElementById(`${title}RenderOption1`).checked = true
       document.getElementById(`${title}ClearGeoFilterButton`).classList.add('hide')
@@ -300,6 +328,7 @@ const renderCharts = (data) => {
       appState[title].usChart.filter(null)
       appState[title].usChart.customUpdate()
       appState[title].usChart.redraw()
+      updatePinnedIssueCircleState(composite)
     }
 
     function resetCharts () {
@@ -309,6 +338,7 @@ const renderCharts = (data) => {
       titleNames.forEach(title => {
         appState[title].samplePeriodEnd.filter(null)
         appState[title].circulationClicked = false
+        appState[title].selectedIssueDate = null
         document.getElementById(`${title}RenderOption1`).checked = true
         document.getElementById(`${title}ClearGeoFilterButton`).classList.add('hide')
 
@@ -321,6 +351,7 @@ const renderCharts = (data) => {
         appState[title].usChart.customUpdate()
         appState[title].usChart.redraw()
       })
+      updatePinnedIssueCircleState(composite)
     }
 
     const clearSelect = document.getElementById('clear-select-1')
@@ -585,6 +616,7 @@ const renderCharts = (data) => {
             chart.selectAll('circle').on('click', (selected) => {
               const currentTitle = selected.data.value.canonical_title === appState.title1.canonical_title ? 'title1' : 'title2'
               appState[currentTitle].circulationClicked = true
+              appState[currentTitle].selectedIssueDate = moment.utc(selected.x).valueOf()
               const clearFilterButton = document.getElementById('clearIssueFilterButton')
               clearFilterButton.classList.remove('hide')
               clearFilterButton.addEventListener('click', composite.unClick)
@@ -602,10 +634,16 @@ const renderCharts = (data) => {
 
               appState[currentTitle].totalSalesByState = appState[currentTitle].salesByState.all().reduce((a, b) => ({value: {sampled_total_sales: a.value.sampled_total_sales + b.value.sampled_total_sales}}))
               appState[currentTitle].usChart.customUpdate()
+              updatePinnedIssueCircleState(chart)
             })
           })
           .on('renderlet.mouseover', (chart) => {
             chart.selectAll('circle').on('mouseover.hover', (selected) => {
+              const hoveredCircle = d3.select(d3.event.currentTarget)
+              const defaultRadius = hoveredCircle.attr('data-default-r') || hoveredCircle.attr('r') || 3
+              hoveredCircle.attr('data-default-r', defaultRadius)
+              hoveredCircle.attr('r', Number(defaultRadius) + 1)
+
               const currentTitle = selected.data.value.canonical_title === appState.title1.canonical_title ? 'title1' : 'title2'
               if (!appState[currentTitle].circulationClicked) {
                 appState[currentTitle].samplePeriodEnd.filter(d => {
@@ -631,10 +669,12 @@ const renderCharts = (data) => {
                 appState[currentTitle].usChart.colorDomain(generateScale(appState[currentTitle].salesByState, 'title1'))
                 appState[currentTitle].usChart.redraw()
               }
+              updatePinnedIssueCircleState(chart)
             })
 
           })
           .on('pretransition', (chart) => {
+            updatePinnedIssueCircleState(chart)
             // SECOND TITLE
             chart.selectAll('circle')
                 .call(lineTip)

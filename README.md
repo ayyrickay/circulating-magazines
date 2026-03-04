@@ -2,6 +2,15 @@
 
 A data visualization that renders magazine circulation data. Powered primarily by `dc.js`.
 
+## Run locally
+
+1. Install dependencies:
+   `npm install`
+2. Start a local dev server with auto-reload:
+   `npx live-server --port=3000 --open=/`
+3. Open:
+   `http://localhost:3000/`
+
 ## Adding and updating new titles
 
 1. Run `npm install` to install all dependencies for the data cleaning scripts.
