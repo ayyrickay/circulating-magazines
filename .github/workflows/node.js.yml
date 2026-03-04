@@ -1,6 +1,7 @@
-name: Node.js CI
+name: CI and Deploy
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop
@@ -10,27 +11,45 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  test:
+    name: Test (Node 24)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 14.x
+          node-version: 24.x
+          cache: npm
 
       - name: Install and test
         run: |
           npm ci
           npm test
 
+  deploy:
+    name: Deploy to gh-pages
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Deploy
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: .

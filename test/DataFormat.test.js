@@ -1,5 +1,6 @@
 import assert from 'assert'
-import { combineCirculation, prettifyIssueData, renderNumberWithCommas, titleCleanup, toMetric, formatNum, hasAValidIssueDate} from '../assets/js/helpers/DataFormat.js'
+import moment from 'moment'
+import { combineCirculation, prettifyIssueData, renderNumberWithCommas, titleCleanup, toMetric, formatNum, hasAValidIssueDate, renderDateInUTC} from '../assets/js/helpers/DataFormat.js'
 
 const emptyData = {
     "data" : {
@@ -51,6 +52,10 @@ const dateErrorIssueData = {
  }
 
 describe('DataFormat', () => {
+    before(() => {
+        global.moment = moment
+    })
+
     describe('renderNumberWithCommas', () => {
         it('should ignore commas for small numbers', () => {
             assert.equal(renderNumberWithCommas(100), '100')
@@ -163,6 +168,46 @@ describe('DataFormat', () => {
                 "special_notes": undefined,
                 "titles_included": "-"
                 })
+        })
+    })
+
+    describe('titleCleanup', () => {
+        it('should filter out geodata rows with unknown states', () => {
+            const geo = [
+                null,
+                { state_region: 'California' },
+                { state_region: 'NotAState' }
+            ]
+            const circulation = [Object.assign({}, dateCorrectIssueData)]
+            const [cleanGeo] = titleCleanup(geo, circulation)
+
+            assert.equal(cleanGeo.length, 1)
+            assert.equal(cleanGeo[0].state_region, 'California')
+        })
+
+        it('should convert valid issue dates to moment objects', () => {
+            const geo = [{ state_region: 'New York' }]
+            const circulation = [Object.assign({}, dateCorrectIssueData)]
+            const [, cleanCirculation] = titleCleanup(geo, circulation)
+
+            assert.equal(moment.isMoment(cleanCirculation[0].actual_issue_date), true)
+        })
+
+        it('should replace invalid issue dates with a valid moment object', () => {
+            const geo = [{ state_region: 'New York' }]
+            const circulation = [Object.assign({}, dateErrorIssueData)]
+            const [, cleanCirculation] = titleCleanup(geo, circulation)
+
+            assert.equal(moment.isMoment(cleanCirculation[0].actual_issue_date), true)
+            assert.equal(cleanCirculation[0].actual_issue_date.isValid(), true)
+        })
+    })
+
+    describe('renderDateInUTC', () => {
+        it('should return a formatted date string', () => {
+            const utcDate = renderDateInUTC('1945-01-29T00:00:00Z')
+            assert.equal(typeof utcDate, 'string')
+            assert.ok(utcDate.includes('1945'))
         })
     })
 })
