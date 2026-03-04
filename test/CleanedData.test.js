@@ -11,20 +11,16 @@ const dataDirectory = path.join(__dirname, '../assets/data/clean')
 describe('Data Set', function() {
     let data = []
 
-    before(function(done) {
-        fs.readdir(dataDirectory, 'utf8', (err, filenames) => {
-            if (err) throw err
-            const filteredFiles = filenames.filter(filename => filename.indexOf('circulation') > -1)
-            filteredFiles.forEach((filename, i) => {
+    before(async function() {
+        const filenames = await fs.promises.readdir(dataDirectory, 'utf8')
+        const filteredFiles = filenames.filter(filename => filename.indexOf('circulation') > -1)
+        data = await Promise.all(
+            filteredFiles.map(async (filename) => {
                 const file = path.join(dataDirectory, filename)
-                fs.readFile(file, 'utf-8', function(err, content) {
-                    if (err) throw err
-                    const json = JSON.parse(content)
-                    data.push(json)
-                    if (i === filteredFiles.length - 1) { done()}
-                })
+                const content = await fs.promises.readFile(file, 'utf-8')
+                return JSON.parse(content)
             })
-        })
+        )
     })
 
     it('should return an array of data', function () {
@@ -33,9 +29,13 @@ describe('Data Set', function() {
     })
 
     it('should have valid issue dates for all titles', function() {
-        data.forEach(title => {
-            const issue = title[0]
-            assert.ok(hasAValidIssueDate(issue), `${issue.canonical_title} has an issue date of ${issue.actual_issue_date}`)
+        data.forEach((title) => {
+            title.forEach((issue) => {
+                assert.ok(
+                    hasAValidIssueDate(issue),
+                    `${issue.canonical_title} has an issue date of ${issue.actual_issue_date}`
+                )
+            })
         })
     })
 

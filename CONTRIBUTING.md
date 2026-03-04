@@ -8,15 +8,17 @@
 5. Legacy deploy config is also present in `.travis.yml` from the earlier Travis-based setup.
 
 ## Local setup
-1. Install dependencies:
+1. Use Node.js 24 (for `nvm` users):
+   `nvm use`
+2. Install dependencies:
    `npm install`
-2. Run tests:
+3. Run tests:
    `npm test`
-3. Run a local HTTP server from the repository root (do not open `index.html` directly via `file://`):
+4. Run a local HTTP server from the repository root (do not open `index.html` directly via `file://`):
    `npx serve .`
-4. Open the app:
+5. Open the app:
    `http://localhost:3000/`
-5. Verify chart behavior and interactions in the browser.
+6. Verify chart behavior and interactions in the browser.
 
 ## Data update workflow
 1. Add raw CSV files under `assets/data/rawData`:
@@ -33,6 +35,16 @@
 2. Verify line chart and map interactions in the browser.
 3. Update `README.md` when user-visible behavior or workflows change.
 4. Merge into `develop` (do not commit generated deploy artifacts to `gh-pages` manually unless doing a one-off recovery).
+
+## Changesets
+1. Add a changeset for any user-visible change:
+   `npx changeset`
+2. Use `patch` for bugfixes and small improvements, `minor` for new backward-compatible features, and `major` for breaking changes.
+3. Reference relevant issue numbers in the changeset body when applicable (for example: `Resolves #49`).
+4. Before preparing a release PR, generate version updates:
+   `npx changeset version`
+5. To inspect pending changesets at any time:
+   `npx changeset status`
 
 ## Notes
 - The project uses `dc.js`/`d3` plus local data-cleaning scripts.
