@@ -4,11 +4,13 @@ A data visualization that renders magazine circulation data. Powered primarily b
 
 ## Run locally
 
-1. Install dependencies:
+1. Use Node.js 24 (for `nvm` users):
+   `nvm use`
+2. Install dependencies:
    `npm install`
-2. Start a local dev server with auto-reload:
+3. Start a local dev server with auto-reload:
    `npx live-server --port=3000 --open=/`
-3. Open:
+4. Open:
    `http://localhost:3000/`
 
 ## Adding and updating new titles
