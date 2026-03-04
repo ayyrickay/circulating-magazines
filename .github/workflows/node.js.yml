@@ -1,0 +1,36 @@
+name: Node.js CI
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14.x
+
+      - name: Install and test
+        run: |
+          npm ci
+          npm test
+
+      - name: Deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: .
