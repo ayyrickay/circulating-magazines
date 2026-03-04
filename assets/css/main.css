@@ -170,6 +170,12 @@ body {
   fill: none;
 }
 
+.clicked-issue-circle {
+  fill-opacity: 1 !important;
+  stroke: #1f2d3d;
+  stroke-width: 1.5px;
+}
+
 .overlay {
   fill: none;
   pointer-events: all;
